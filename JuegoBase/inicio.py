@@ -1,4 +1,4 @@
-from random import random
+from random import random,choice
 from pieza import conjuntoDePiezas
 class hueco():
     tipo = None
@@ -29,10 +29,7 @@ class juego():
         self.ancho = ancho
         self.alto = alto
         self.listafichas = conjuntoDePiezas()
-        self.posicionXPieza = 3
-        self.posicionYPieza = 0
-        self.rotacionPieza  = 0
-        self.tipoPieza      = "te"
+        self.cambiarPieza()
         self.activo         = True
         for i in range(0,ancho):
             for j in range(0,alto):
@@ -53,6 +50,7 @@ class juego():
         while(self.activo):
             accion        = True
             self.dibujarJuego()
+            self.dibujarJuegoFichero()
             print("f (final) a (giro derecha) d (giro izquierda) w (vuleta) s (bajar) numero (posicion)")
             texto = input("").replace("\n","")
             if texto == "f":
@@ -84,12 +82,30 @@ class juego():
                 if not self.esValida():
                     self.posicionXPieza = anteriorValor
                     accion             = False
+            elif texto == "e":
+                anteriorValor       = self.posicionXPieza
+                self.posicionXPieza = anteriorValor + 1
+                if not self.esValida():
+                    self.posicionXPieza = anteriorValor
+                    accion             = False
+                    print("maximo alcanzado")
+            elif texto == "q":
+                anteriorValor       = self.posicionXPieza
+                self.posicionXPieza = anteriorValor - 1
+                if not self.esValida():
+                    self.posicionXPieza = anteriorValor
+                    accion             = False
+                    print("mino alcanzado")
             else:
                 print("Operacion no valida")
             if accion:
                 self.actualizarPieza()
                 self.comprobarCompleto()
-
+    def cambiarPieza(self):
+        self.posicionXPieza = choice(list(range(2,7)))
+        self.posicionYPieza = 0
+        self.rotacionPieza  = choice(list(range(0,4)))
+        self.tipoPieza      = choice(list( self.listafichas.diccionarioPiezas.keys())) #"te"
     def bajarLinea(self,altura):
         for i in range(altura , 0 , -1):
             for j in range(0,self.ancho):
@@ -130,6 +146,7 @@ class juego():
                 cantidadQuebajo = aux
         for nuevaOcu in piezaPosi:
             self.casillasDict[(nuevaOcu[0], nuevaOcu[1] + cantidadQuebajo) ].tipo = "Casilla"
+        self.cambiarPieza()
          
     def actualizarPieza(self):
         for i in self.casillasDict.keys():
@@ -178,9 +195,37 @@ class juego():
                         case _:
                             texto += "E" #esto es error
 
-            print(texto)
+            print(texto,end='\n')
             texto = ""
         print(" 0123456789")
+    def dibujarJuegoFichero(self):
+        texto:str = ""
+        textoAFichero = ["x\n"]
+        for j in range(-1 , self.alto + 1):
+            for i in range(-1 , self.ancho + 1):
+                #texto += self.pared
+                if(i < 0 or i >= self.ancho):
+                    texto += "M"
+                elif(j < 0 or j >= self.alto):
+                    texto += "M"
+                else:
+                    match self.casillasDict[(i,j)].tipo:
+                        case "Vacio":
+                            texto += "V"
+                        case "Casilla":
+                            texto += "C"
+                        case "Pieza":
+                            texto += "P"
+                        case _:
+                            texto += "E" #esto es error
+
+            #print(texto,end='\n')
+            textoAFichero.append(texto + "\n")
+            texto = ""
+        with open("ficherosComunos/estadoJuego.richi","w") as archivo:
+            for i in textoAFichero:
+                archivo.write(i)
+        ##print(" 0123456789")
 
     
 
