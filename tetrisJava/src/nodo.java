@@ -1,8 +1,7 @@
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class nodo<T> {
+public class nodo {
     String id;
     Integer valorHeuristico;
     private nodo padre;    
@@ -30,8 +29,5 @@ public class nodo<T> {
         }else{
             resultado.add(id);
         }
-    }
-    public List<T> crearHijos(){
-        return new ArrayList<>();
     }
 }

@@ -20,6 +20,10 @@ class conjuntoDePiezas():
         return list(
             map(lambda i : (i[0]+x,i[1]+y) , self.diccionarioPiezas[tipo][giro])
         )
+    def devolverPiezaPosicionesLista(self,tipo:"str",giro:'int',x:'int',y:'int',tamano:'int'):
+        return list(
+            map(lambda i : (i[0]+x,i[1]+y) , self.diccionarioPiezas[tipo][giro])
+        )
 
 
 def pasarNumero(texto):

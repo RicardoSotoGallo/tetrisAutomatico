@@ -1,4 +1,5 @@
 from random import random,choice
+import subprocess
 from pieza import conjuntoDePiezas
 class hueco():
     tipo = None
@@ -25,6 +26,7 @@ class juego():
     tipoPieza      = ""
     activo = True
     def __init__(self,ancho:'int' , alto:'int'):
+        
         self.casillasDict = {}
         self.ancho = ancho
         self.alto = alto
@@ -42,7 +44,72 @@ class juego():
                 #else:
                 #    self.casillasDict[(i,j)] = hueco("Vacio")
         self.actualizarPieza()
-        self.bucleJugable()
+        self.bucleJugableConFichero(40)
+    
+    def bucleJugableConFichero(self,iteraciones):
+        anteriorValor = 0
+        accion        = True
+        for i in range(0,iteraciones):
+            accion        = True
+            self.dibujarJuego()
+            self.dibujarJuegoFichero()
+            subprocess.run(["java","--enable-preview","tetrisJava/src/calcularGrafoVirtual.java"])
+            accion = self.recibirHeuristica()+"s"
+            a = input()
+            print(f"accion -> {accion}")
+            for texto in accion:
+                self.dibujarJuego()
+            #texto = input("").replace("\n","")
+                if texto == "f":
+                    print("fin del juego")
+                    self.activo = False
+                elif texto == "d":
+                    anteriorValor      = self.rotacionPieza
+                    self.rotacionPieza = (self.rotacionPieza+1)%4
+                    if not self.esValida():
+                        self.rotacionPieza = anteriorValor
+                        accion             = False
+                elif texto == "a":
+                    anteriorValor      = self.rotacionPieza
+                    self.rotacionPieza = (self.rotacionPieza-1)%4
+                    if not self.esValida():
+                        self.rotacionPieza = anteriorValor
+                        accion             = False
+                elif texto == "w":
+                    anteriorValor      = self.rotacionPieza
+                    self.rotacionPieza = (self.rotacionPieza+2)%4
+                    if not self.esValida():
+                        self.rotacionPieza = anteriorValor
+                        accion             = False
+                elif texto == "s":
+                    self.bajarPieza()
+                elif texto.isdigit():
+                    anteriorValor       = self.posicionXPieza
+                    self.posicionXPieza = int(texto)
+                    if not self.esValida():
+                        self.posicionXPieza = anteriorValor
+                        accion             = False
+                elif texto == "e":
+                    anteriorValor       = self.posicionXPieza
+                    self.posicionXPieza = anteriorValor + 1
+                    if not self.esValida():
+                        self.posicionXPieza = anteriorValor
+                        accion             = False
+                        print("maximo alcanzado")
+                elif texto == "q":
+                    anteriorValor       = self.posicionXPieza
+                    self.posicionXPieza = anteriorValor - 1
+                    if not self.esValida():
+                        self.posicionXPieza = anteriorValor
+                        accion             = False
+                        print("mino alcanzado")
+                else:
+                    print("Operacion no valida")
+                if accion:
+                    self.actualizarPieza()
+                    self.comprobarCompleto()
+
+
 
     def bucleJugable(self):
         anteriorValor = 0
@@ -51,6 +118,10 @@ class juego():
             accion        = True
             self.dibujarJuego()
             self.dibujarJuegoFichero()
+            subprocess.run(["java","--enable-preview","tetrisJava/src/calcularGrafoVirtual.java"])
+            #accion = self.recibirHeuristica()
+            #print(f"accion -> {accion}")
+
             print("f (final) a (giro derecha) d (giro izquierda) w (vuleta) s (bajar) numero (posicion)")
             texto = input("").replace("\n","")
             if texto == "f":
@@ -101,11 +172,13 @@ class juego():
             if accion:
                 self.actualizarPieza()
                 self.comprobarCompleto()
+
     def cambiarPieza(self):
         self.posicionXPieza = choice(list(range(2,7)))
         self.posicionYPieza = 0
         self.rotacionPieza  = choice(list(range(0,4)))
         self.tipoPieza      = choice(list( self.listafichas.diccionarioPiezas.keys())) #"te"
+    
     def bajarLinea(self,altura):
         for i in range(altura , 0 , -1):
             for j in range(0,self.ancho):
@@ -198,6 +271,7 @@ class juego():
             print(texto,end='\n')
             texto = ""
         print(" 0123456789")
+    
     def dibujarJuegoFichero(self):
         texto:str = ""
         textoAFichero = ["x\n"]
@@ -226,6 +300,14 @@ class juego():
             for i in textoAFichero:
                 archivo.write(i)
         ##print(" 0123456789")
+
+    def recibirHeuristica(self):
+        res = ""
+        with open("ficherosComunos/resultadoHeuristico.richi","r") as archivo:
+            res += archivo.readline()
+        res = res.replace("[","").replace("]","").replace(",","")
+        return res.lower()
+            
 
     
 
