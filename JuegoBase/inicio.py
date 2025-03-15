@@ -44,9 +44,10 @@ class juego():
                 #else:
                 #    self.casillasDict[(i,j)] = hueco("Vacio")
         self.actualizarPieza()
-        self.bucleJugableConFichero(40)
+        #self.bucleJugable()
+        self.bucleJugableConFichero(40,False)
     
-    def bucleJugableConFichero(self,iteraciones):
+    def bucleJugableConFichero(self,iteraciones,teclado):
         anteriorValor = 0
         accion        = True
         for i in range(0,iteraciones):
@@ -55,7 +56,12 @@ class juego():
             self.dibujarJuegoFichero()
             subprocess.run(["java","--enable-preview","tetrisJava/src/calcularGrafoVirtual.java"])
             accion = self.recibirHeuristica()+"s"
-            a = input()
+            if teclado:
+                a = input().replace("\n","")
+                if( a == "f"):
+                    print("fin del juego")
+                    self.activo = False
+                    break
             print(f"accion -> {accion}")
             for texto in accion:
                 self.dibujarJuego()
@@ -313,3 +319,5 @@ class juego():
 
 
 juegoActual = juego(10,20)
+
+

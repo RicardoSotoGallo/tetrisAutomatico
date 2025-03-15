@@ -21,26 +21,28 @@ public class calcularGrafoVirtual {
         System.out.println("altura -> "+lf.altura);
         System.out.println("anchura -> "+lf.anchura);*/
 
+        /*
+         * entrada[0] = anchura del tablero
+         * entrada[1] = anchura de la pieza en x
+         * entrada[2] = altura del teblero
+         */
         List<Integer> objetivo = new ArrayList<>();
         objetivo.add( lf.anchura );
         objetivo.add( lf.tamPiezaX);
         objetivo.add( lf.altura);
-        /*Integer mejorInicio = lf.listaAlturasBloques.subList(0, lf.anchura - lf.tamPiezaX).stream().max(Integer::compareTo).get();
-        Integer posicionMejor = 0;
-        for(int i : lf.listaAlturasBloques){
-            if(i == mejorInicio){
-                break;
-            }else{
-                posicionMejor++;
-            }
-        }*/
-        //nodoLista n = new nodoLista(lf.vectorFinal, 0, "inicio");
-
-        //n.calcularHeuristica(objetivo);
 
         List<Integer> inicio = new ArrayList<>(lf.vectorFinal);
-        inicio.set(inicio.size() - 1, 5);
-        nodoLista n = new nodoLista(inicio, 0, "5");
+        Integer valorMejorParaEmpezar = lf.listaAlturasBloques.stream().max(Integer::compareTo).get();
+        Integer mejorCompienza = 0;
+        for(Integer i : lf.listaAlturasBloques){
+            if(i.equals(valorMejorParaEmpezar)){
+                break;
+            }else{
+                mejorCompienza++;
+            }   
+        }
+        inicio.set(inicio.size() - 1, lf.posicionX);
+        nodoLista n = new nodoLista(inicio, 0, lf.posicionX.toString());
         List<String> resultado = calcularGrafoLista( n , objetivo);
         try (FileWriter writer = new FileWriter("ficherosComunos/resultadoHeuristico.richi")) {
             writer.write(resultado.toString());
@@ -48,11 +50,7 @@ public class calcularGrafoVirtual {
             System.out.println("Error al escribir en el archivo: " + e.getMessage());
         }
 
-        /*List<Integer> objetivo = new ArrayList<>();
-        List<Integer> entrada = new ArrayList<>();
-        entrada.add(1);  entrada.add(0);  entrada.add(0);  entrada.add(1);
-        objetivo.add(0); objetivo.add(1); objetivo.add(1); objetivo.add(0);
-        calcularGrafoLista(entrada,objetivo);*/
+        
     }
     public static  List<String> calcularGrafoLista(nodoLista entrada , List<Integer> objetivo){
         LinkedList<nodoLista> porVisitar = new LinkedList<>();
@@ -70,7 +68,7 @@ public class calcularGrafoVirtual {
         while(!porVisitar.isEmpty() && noEncontrado){
             List<nodoLista> hijos = actual.crearHijos();
             for(nodoLista h : hijos){
-                if(!visitados.stream().anyMatch(t -> t.id.equals(h.id) ) && !porVisitar.stream().anyMatch(t -> t.id.equals(h.id))){
+                if(!visitados.contains(h) && !porVisitar.contains(h)){
                     h.calcularHeuristica(objetivo);
                     int contador = 0;
                     for(nodoLista j : porVisitar){

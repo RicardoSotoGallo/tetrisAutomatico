@@ -7,125 +7,135 @@ public class nodoLista extends nodo {
     List<Integer> movQ;
     List<Integer> movE;
     List<Integer> movW;
+
     List<Integer> base;
     Integer ejeX;
     Integer giro;
     Integer errorGrabe;
     Integer errorLeve;
     String comando;
-    boolean aBajadoLaPieza;
+    boolean condicionMejorPieza;
     public nodoLista(List<Integer> ls,Integer rotacion,String comando) {
-        movIdel = new ArrayList<>(ls.subList(0, 4));
-        movE    = new ArrayList<>(ls.subList(4, 8));
-        movW    = new ArrayList<>(ls.subList(8, 12));
-        movQ    = new ArrayList<>(ls.subList(12, 16));
-        base    = new ArrayList<>(ls.subList(16, 26));
+        movIdel = new ArrayList<>(ls.subList(0, 8));
+        movE    = new ArrayList<>(ls.subList(8, 16));
+        movW    = new ArrayList<>(ls.subList(16, 24));
+        movQ    = new ArrayList<>(ls.subList(24, 32));
+        base    = new ArrayList<>(ls.subList(32, 42));
         giro    = 0;
-        ejeX    = ls.get(26);
-        String id = rotacion.toString()+":"+ls.get(26).toString();
+        ejeX    = ls.get(42);
+        Integer ejeXAux = ls.get(42);
+        String id = rotacion.toString()+":"+ ejeXAux.toString();
         errorGrabe = 0;
         errorLeve  = 0;
         this.comando = comando;
-        aBajadoLaPieza = false;
+        condicionMejorPieza = false;
         super(id);
     }
     public void calcularHeuristica(List<Integer> entrada){
-        //la 0 de entrada es el tamaño del tetris en x 
-        //la 1 es el tamaño en x de una pieza
         /*
-         * Cambiar la heuristica de tal forma que compruebe el tamaño entero y solo no compruebe cuando hay un -1
-         * Si sin estar -1 sale fuera no calculamos y colocamos el mega castigo
+         * entrada[0] = anchura del tablero
+         * entrada[1] = anchura de la pieza en x
+         * entrada[2] = altura del teblero
          */
-        int heu = 0;
-        Integer cantidadDeMenos1 = movIdel.stream().filter(t -> t == -1).toList().size();
-        if(ejeX + entrada.get(1) - cantidadDeMenos1<= entrada.get(0)&& ejeX >= 0){
-            List<Integer> restas  = new ArrayList<>();
-            List<Integer> sombra    = new ArrayList<>();
-            List<Integer> alturas = new ArrayList<>();
-            
-            for(int i = 0 ; i < entrada.get(1) - cantidadDeMenos1 ; i++){
-                if(movIdel.get(i) >= 0){
-                    restas.add(base.get( ejeX + i ) - (movIdel.get(i) + 1));
-                    sombra.add(base.get( ejeX + i ));
-                    alturas.add(- (movIdel.get(i) ) + (   movW.get(i) + 1) );
-                    
+        Integer minimo = -1;
+        Integer maximo = -1;
+        Integer maximaAltura = -1;
+        Integer minimaAltura = -1;
+        Integer colisionAux = 0;
+        Integer alturaAux = 0;
+        //List<Integer> listaColisiones = new ArrayList<>();
+        /*if(id.equals("3:7")){
+            System.out.println("buenas");
+        }*/
+        for(int i = 0 ; i < entrada.get(1) ; i++){
+            if(movIdel.get(i) >= 0){
+                if( i + ejeX < base.size()){
+                    colisionAux = base.get(ejeX + i) + movIdel.get(i);
+                    alturaAux   = movIdel.get(i + entrada.get(1)) + entrada.get(2) - base.get(ejeX + i);
+                    //listaColisiones.add( colisionAux );
+                    if(minimo == -1 || colisionAux < minimo){
+                        minimo = colisionAux;
+                    }
+                    if(colisionAux > maximo){
+                        maximo = colisionAux;
+                    }
+                    if( alturaAux > maximaAltura ){
+                        maximaAltura = alturaAux;
+                    }
+                    if(minimaAltura == -1 || entrada.get(2) - base.get(ejeX + i) < minimaAltura ){
+                        minimaAltura = entrada.get(2) - base.get(ejeX + i);
+                    }
+                }else{
+                    errorGrabe++;
                 }
             }
-            Integer maximaResta = restas.stream().max(Integer::compareTo).get();
-            Integer minimaResta = restas.stream().min(Integer::compareTo).get();
-            Integer maxBase     =   base.stream().min(Integer::compareTo).get();
-            Integer maxSombra   = sombra.stream().min(Integer::compareTo).get();
-            Integer maxAltura   =alturas.stream().max(Integer::compareTo).get();
-            //System.out.println("resta -> "+restas);
-            //System.out.println("sombra -> "+sombra);
-            //System.out.println("altura -> "+alturas);
-            //System.out.println("max base -> "+maxBase);
-            //System.out.println("maxSombra -> "+maxSombra+" maxAltura -> "+maxAltura+" calculo -> "+ (maxSombra - maxAltura));
-            if((maxSombra - maxAltura) >= maxBase){
-                aBajadoLaPieza = true;
-            }
-            heu = maxSombra;
-            errorLeve = (maximaResta - minimaResta);
-        }else{
-            errorGrabe++;
         }
-        this.valorHeuristico = heu + errorLeve*-100 + errorGrabe * -100000;
+        Integer maxAlturaPieza = movIdel.stream().max(Integer::compareTo).get(); 
+        Integer minimaBajada   = base.stream().map(t -> entrada.get(2) - t ).min(Integer::compareTo).get();
+        errorLeve = maximo - minimo;
+        if(minimaAltura <= minimaBajada) condicionMejorPieza = true;
+        this.valorHeuristico = - minimaAltura - errorLeve*100 - errorGrabe * 10000;
+
     }
     @Override
     public boolean nodoObjetivo(List<Integer> entrada){
-        return (errorLeve == 0) && (errorGrabe == 0) && aBajadoLaPieza;
+        return (errorLeve == 0) && (errorGrabe == 0) && condicionMejorPieza;
     }
     public List<nodoLista> crearHijos(){
         List<nodoLista> res = new ArrayList<>();
         nodoLista unHijo;
+        List<Integer> moveAux;
         /*
          * Testear que llege hasta el fondo. 
          * Comprobar quitando el caso de parada y ver que pasen todos y enseñar por pantalla
          */
         //MoverDerecha
-        List<Integer> moviendoD = new ArrayList<>();
-        moviendoD.addAll(movIdel);moviendoD.addAll(movE);
-        moviendoD.addAll(movW);   moviendoD.addAll(movQ);
-        moviendoD.addAll(base);   moviendoD.add(ejeX+1);
-        unHijo = new nodoLista(moviendoD, giro,"E");
-        unHijo.setPadre(this);
-        res.add( unHijo );
+        if(ejeX <= base.size() - 1){
+            moveAux = new ArrayList<>();
+            moveAux.addAll(movIdel);moveAux.addAll(movE);
+            moveAux.addAll(movW);   moveAux.addAll(movQ);
+            moveAux.addAll(base);   moveAux.add(ejeX+1);
+            unHijo = new nodoLista(moveAux, giro,"E");
+            unHijo.setPadre(this);
+            res.add( unHijo );
+        }
+        
 
         //mover Izquierda
         if(ejeX - 1 >= 0){
-            moviendoD = new ArrayList<>();
-            moviendoD.addAll(movIdel);moviendoD.addAll(movE);
-            moviendoD.addAll(movW);   moviendoD.addAll(movQ);
-            moviendoD.addAll(base);   moviendoD.add(ejeX-1);
-            unHijo = new nodoLista(moviendoD, giro,"Q");
+            moveAux = new ArrayList<>();
+            moveAux.addAll(movIdel);moveAux.addAll(movE);
+            moveAux.addAll(movW);   moveAux.addAll(movQ);
+            moveAux.addAll(base);   moveAux.add(ejeX-1);
+            unHijo = new nodoLista(moveAux, giro,"Q");
             unHijo.setPadre(this);
             res.add( unHijo );
         }
 
         //girarDerecha una vez
-        moviendoD = new ArrayList<>();
-        moviendoD.addAll(movE);moviendoD.addAll(movW);
-        moviendoD.addAll(movQ);   moviendoD.addAll(movIdel);
-        moviendoD.addAll(base);   moviendoD.add(ejeX);
-        unHijo = new nodoLista(moviendoD, (giro+1)%5,"A");
+        moveAux = new ArrayList<>();
+        moveAux.addAll(movE);moveAux.addAll(movW);
+        moveAux.addAll(movQ);   moveAux.addAll(movIdel);
+        moveAux.addAll(base);   moveAux.add(ejeX);
+        unHijo = new nodoLista(moveAux, (giro+1)%5,"A");
         unHijo.setPadre(this);
         res.add( unHijo );
 
         //girar dercha dos veces o invertir
-        moviendoD = new ArrayList<>();
-        moviendoD.addAll(movW);moviendoD.addAll(movQ);
-        moviendoD.addAll(movIdel);   moviendoD.addAll(movE);
-        moviendoD.addAll(base);   moviendoD.add(ejeX);
-        unHijo = new nodoLista(moviendoD, (giro+2)%5,"W");
+        moveAux = new ArrayList<>();
+        moveAux.addAll(movW);moveAux.addAll(movQ);
+        moveAux.addAll(movIdel);   moveAux.addAll(movE);
+        moveAux.addAll(base);   moveAux.add(ejeX);
+        unHijo = new nodoLista(moveAux, (giro+2)%5,"W");
         unHijo.setPadre(this);
         res.add( unHijo );
 
         //girar derecha tres veces o girar izquierda
-        moviendoD = new ArrayList<>();
-        moviendoD.addAll(movQ);moviendoD.addAll(movIdel);
-        moviendoD.addAll(movE);   moviendoD.addAll(movIdel);
-        moviendoD.addAll(base);   moviendoD.add(ejeX);
-        unHijo = new nodoLista(moviendoD, (giro+3)%5,"D");
+        moveAux = new ArrayList<>();
+        moveAux.addAll(movQ);moveAux.addAll(movIdel);
+        moveAux.addAll(movE);   moveAux.addAll(movIdel);
+        moveAux.addAll(base);   moveAux.add(ejeX);
+        unHijo = new nodoLista(moveAux, (giro+3)%5,"D");
         unHijo.setPadre(this);
         res.add( unHijo );
 
@@ -140,6 +150,17 @@ public class nodoLista extends nodo {
         }else{
             resultado.add(comando);
         }
+    }
+    @Override
+    public boolean equals(Object obj) {
+        // TODO Auto-generated method stub
+        boolean res = false;
+        if(obj.getClass().equals(this.getClass())){
+            if( ((nodoLista)obj).id.equals(this.id)){
+                res = true;
+            }
+        }
+        return res;
     }
     
 }
