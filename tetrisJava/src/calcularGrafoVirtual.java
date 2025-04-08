@@ -68,15 +68,20 @@ public class calcularGrafoVirtual {
         while(!porVisitar.isEmpty() && noEncontrado){
             List<nodoLista> hijos = actual.crearHijos();
             for(nodoLista h : hijos){
+                int contador = 0;
                 if(!visitados.contains(h) && !porVisitar.contains(h)){
                     h.calcularHeuristica(objetivo);
-                    int contador = 0;
-                    for(nodoLista j : porVisitar){
-                        if(j.valorHeuristico < h.valorHeuristico){
-                            break;
-                        }else{
-                            contador += 1;
+                    
+                    if( h.valorHeuristico >= -300){
+                        for(nodoLista j : porVisitar){
+                            if(j.valorHeuristico < h.valorHeuristico){
+                                break;
+                            }else{
+                                contador += 1;
+                            }
                         }
+                    }else{
+                        contador = porVisitar.size() - 1;
                     }
                     porVisitar.add(contador , h);
                 }

@@ -1,3 +1,5 @@
 #import subprocess
 #subprocess.run(["java","tetrisJava/src/pruebas.java"])
-print(16-21)
+import pieza
+c = pieza.conjuntoDePiezas()
+print(c.devolverPiezaPosiciones("ele", 0 , 0))

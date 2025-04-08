@@ -1,4 +1,5 @@
 from random import random,choice
+from math import cos , sin , pi
 import subprocess
 from pieza import conjuntoDePiezas
 class hueco():
@@ -36,84 +37,72 @@ class juego():
         for i in range(0,ancho):
             for j in range(0,alto):
                 self.casillasDict[(i,j)] = hueco("Vacio")
-                #if j > 10:
-                #    if (i+j)%2 == 0:
-                #        self.casillasDict[(i,j)] = hueco("Casilla")
-                #    else:
-                #        self.casillasDict[(i,j)] = hueco("Vacio")
-                #else:
-                #    self.casillasDict[(i,j)] = hueco("Vacio")
         self.actualizarPieza()
-        #self.bucleJugable()
-        self.bucleJugableConFichero(40,False)
+        self.bucleJugable()
+        #self.bucleJugableConFichero(40,False)
     
     def bucleJugableConFichero(self,iteraciones,teclado):
+        #subprocess.run(["java","--enable-preview","tetrisJava/src/calcularGrafoVirtual.java"])
+            
         anteriorValor = 0
         accion        = True
-        for i in range(0,iteraciones):
+        while(self.activo):
             accion        = True
+            #self.escanearJuego()
             self.dibujarJuego()
             self.dibujarJuegoFichero()
-            subprocess.run(["java","--enable-preview","tetrisJava/src/calcularGrafoVirtual.java"])
-            accion = self.recibirHeuristica()+"s"
-            if teclado:
-                a = input().replace("\n","")
-                if( a == "f"):
-                    print("fin del juego")
-                    self.activo = False
-                    break
-            print(f"accion -> {accion}")
-            for texto in accion:
-                self.dibujarJuego()
-            #texto = input("").replace("\n","")
-                if texto == "f":
-                    print("fin del juego")
-                    self.activo = False
-                elif texto == "d":
-                    anteriorValor      = self.rotacionPieza
-                    self.rotacionPieza = (self.rotacionPieza+1)%4
-                    if not self.esValida():
-                        self.rotacionPieza = anteriorValor
-                        accion             = False
-                elif texto == "a":
-                    anteriorValor      = self.rotacionPieza
-                    self.rotacionPieza = (self.rotacionPieza-1)%4
-                    if not self.esValida():
-                        self.rotacionPieza = anteriorValor
-                        accion             = False
-                elif texto == "w":
-                    anteriorValor      = self.rotacionPieza
-                    self.rotacionPieza = (self.rotacionPieza+2)%4
-                    if not self.esValida():
-                        self.rotacionPieza = anteriorValor
-                        accion             = False
-                elif texto == "s":
-                    self.bajarPieza()
-                elif texto.isdigit():
-                    anteriorValor       = self.posicionXPieza
-                    self.posicionXPieza = int(texto)
-                    if not self.esValida():
-                        self.posicionXPieza = anteriorValor
-                        accion             = False
-                elif texto == "e":
+            self.dibujarJuegoFicheroComprimido()
+            print("f (final) a (giro derecha) d (giro izquierda) w (vuleta) s (bajar) numero (posicion)")
+            texto = input("").replace("\n","")
+            if texto == "f":
+                print("fin del juego")
+                self.activo = False
+            elif texto == "d":
+                anteriorValor      = self.listaPosicionesFichas
+                self.listaPosicionesFichas = self.girarPieza(pi/2)
+                if not self.esValida():
+                    self.listaPosicionesFichas = anteriorValor
+                    accion = False
+                
+            elif texto == "a":
+                anteriorValor      = self.listaPosicionesFichas
+                self.listaPosicionesFichas = self.girarPieza( - pi/2)
+                if not self.esValida():
+                    self.listaPosicionesFichas = anteriorValor
+                    accion = False
+                
+            elif texto == "w":
+                anteriorValor      = self.listaPosicionesFichas
+                self.listaPosicionesFichas = self.girarPieza( pi)
+                if not self.esValida():
+                    self.listaPosicionesFichas = anteriorValor
+                    accion = False
+            
+            elif texto == "e":
                     anteriorValor       = self.posicionXPieza
                     self.posicionXPieza = anteriorValor + 1
                     if not self.esValida():
                         self.posicionXPieza = anteriorValor
                         accion             = False
                         print("maximo alcanzado")
-                elif texto == "q":
-                    anteriorValor       = self.posicionXPieza
-                    self.posicionXPieza = anteriorValor - 1
-                    if not self.esValida():
-                        self.posicionXPieza = anteriorValor
-                        accion             = False
-                        print("mino alcanzado")
-                else:
-                    print("Operacion no valida")
-                if accion:
+            elif texto == "q":
+                anteriorValor       = self.posicionXPieza
+                self.posicionXPieza = anteriorValor - 1
+                if not self.esValida():
+                    self.posicionXPieza = anteriorValor
+                    accion             = False
+                    print("mino alcanzado")
+            
+            elif texto == "s":
+                    self.bajarPieza()
                     self.actualizarPieza()
-                    self.comprobarCompleto()
+                    accion = False
+            
+            else:
+                print("Operacion no valida")
+            if accion:
+                self.actualizarPosicionPieza()
+                self.comprobarCompleto()
 
 
 
@@ -122,50 +111,43 @@ class juego():
         accion        = True
         while(self.activo):
             accion        = True
+            #self.escanearJuego()
             self.dibujarJuego()
             self.dibujarJuegoFichero()
-            subprocess.run(["java","--enable-preview","tetrisJava/src/calcularGrafoVirtual.java"])
-            #accion = self.recibirHeuristica()
-            #print(f"accion -> {accion}")
-
+            self.dibujarJuegoFicheroComprimido()
             print("f (final) a (giro derecha) d (giro izquierda) w (vuleta) s (bajar) numero (posicion)")
             texto = input("").replace("\n","")
             if texto == "f":
                 print("fin del juego")
                 self.activo = False
             elif texto == "d":
-                anteriorValor      = self.rotacionPieza
-                self.rotacionPieza = (self.rotacionPieza+1)%4
+                anteriorValor      = self.listaPosicionesFichas
+                self.listaPosicionesFichas = self.girarPieza(pi/2)
                 if not self.esValida():
-                    self.rotacionPieza = anteriorValor
-                    accion             = False
+                    self.listaPosicionesFichas = anteriorValor
+                    accion = False
+                
             elif texto == "a":
-                anteriorValor      = self.rotacionPieza
-                self.rotacionPieza = (self.rotacionPieza-1)%4
+                anteriorValor      = self.listaPosicionesFichas
+                self.listaPosicionesFichas = self.girarPieza( - pi/2)
                 if not self.esValida():
-                    self.rotacionPieza = anteriorValor
-                    accion             = False
+                    self.listaPosicionesFichas = anteriorValor
+                    accion = False
+                
             elif texto == "w":
-                anteriorValor      = self.rotacionPieza
-                self.rotacionPieza = (self.rotacionPieza+2)%4
+                anteriorValor      = self.listaPosicionesFichas
+                self.listaPosicionesFichas = self.girarPieza( pi)
                 if not self.esValida():
-                    self.rotacionPieza = anteriorValor
-                    accion             = False
-            elif texto == "s":
-                self.bajarPieza()
-            elif texto.isdigit():
-                anteriorValor       = self.posicionXPieza
-                self.posicionXPieza = int(texto)
-                if not self.esValida():
-                    self.posicionXPieza = anteriorValor
-                    accion             = False
+                    self.listaPosicionesFichas = anteriorValor
+                    accion = False
+            
             elif texto == "e":
-                anteriorValor       = self.posicionXPieza
-                self.posicionXPieza = anteriorValor + 1
-                if not self.esValida():
-                    self.posicionXPieza = anteriorValor
-                    accion             = False
-                    print("maximo alcanzado")
+                    anteriorValor       = self.posicionXPieza
+                    self.posicionXPieza = anteriorValor + 1
+                    if not self.esValida():
+                        self.posicionXPieza = anteriorValor
+                        accion             = False
+                        print("maximo alcanzado")
             elif texto == "q":
                 anteriorValor       = self.posicionXPieza
                 self.posicionXPieza = anteriorValor - 1
@@ -173,12 +155,18 @@ class juego():
                     self.posicionXPieza = anteriorValor
                     accion             = False
                     print("mino alcanzado")
+            
+            elif texto == "s":
+                    self.bajarPieza()
+                    self.actualizarPieza()
+                    accion = False
+            
             else:
                 print("Operacion no valida")
             if accion:
-                self.actualizarPieza()
+                self.actualizarPosicionPieza()
                 self.comprobarCompleto()
-
+                
     def cambiarPieza(self):
         self.posicionXPieza = choice(list(range(2,7)))
         self.posicionYPieza = 0
@@ -231,26 +219,26 @@ class juego():
         for i in self.casillasDict.keys():
             if self.casillasDict[i].tipo == "Pieza":
                 self.casillasDict[i].tipo = "Vacio"
-        for i in self.listafichas.devolverPiezaPosiciones(
-            self.tipoPieza,
-            self.rotacionPieza,
-            self.posicionXPieza,
-            self.posicionYPieza
-            ):
-            self.casillasDict[i].tipo = "Pieza"
+        
+        self.listaPosicionesFichas = self.listafichas.devolverPiezaSinPosicion(self.tipoPieza)
+        
+        self.listaPosicionesFichas = self.girarPieza( pi / 2 * self.rotacionPieza )
+        for x,y in self.listaPosicionesFichas:
+            self.casillasDict[ (x + self.posicionXPieza , y +self.posicionYPieza) ].tipo = "Pieza"
+        #print(f"tipo de pieza -> {self.tipoPieza}")
+    
+    def actualizarPosicionPieza(self):
+        for i in self.casillasDict.keys():
+            if self.casillasDict[i].tipo == "Pieza":
+                self.casillasDict[i].tipo = "Vacio"
+        
+        for x,y in self.listaPosicionesFichas:
+            self.casillasDict[ (x + self.posicionXPieza , y +self.posicionYPieza) ].tipo = "Pieza"
 
     def esValida(self):
         res = True
-        for i in self.listafichas.devolverPiezaPosiciones(
-            self.tipoPieza,
-            self.rotacionPieza,
-            self.posicionXPieza,
-            self.posicionYPieza
-            ):
-            if i in self.casillasDict.keys():
-                if self.casillasDict[i] == "Casilla":
-                    res = False
-            else:
+        for x , y in self.listaPosicionesFichas:
+            if x + self.posicionXPieza >= self.ancho or x + self.posicionXPieza < 0:
                 res = False
         return res
     
@@ -306,6 +294,99 @@ class juego():
             for i in textoAFichero:
                 archivo.write(i)
         ##print(" 0123456789")
+
+    def dibujarJuegoFicheroComprimido(self):
+        texto = ""
+        textoAFichero = ["x\n"]
+        self.escanearJuego()
+        textoAFichero.append(f"base:{self.base}\n")
+        #======================================================
+        posAux = self.listaPosicionesFichas
+        abajo = [-1 for i in range(0,4)]
+        arriba = [-1 for i in range(0,4)]
+        for x,y in posAux:
+            if abajo[x] == -1 or abajo[x] - 1 < y:
+                abajo[x] = y+1
+            if arriba[x] == -1 or arriba[x] > y:
+                arriba[x] = y
+        textoAFichero.append(f"0:{abajo}|{arriba}\n")
+        #======================================================
+        posAux = self.girarPieza(pi/2)
+        abajo = [-1 for i in range(0,4)]
+        arriba = [-1 for i in range(0,4)]
+        for x,y in posAux:
+            if abajo[x] == -1 or abajo[x] - 1 < y:
+                abajo[x] = y+1
+            if arriba[x] == -1 or arriba[x] > y:
+                arriba[x] = y
+        textoAFichero.append(f"1:{abajo}|{arriba}\n")
+        #======================================================
+        posAux = self.girarPieza(pi)
+        abajo = [-1 for i in range(0,4)]
+        arriba = [-1 for i in range(0,4)]
+        for x,y in posAux:
+            if abajo[x] == -1 or abajo[x] - 1 < y:
+                abajo[x] = y+1
+            if arriba[x] == -1 or arriba[x] > y:
+                arriba[x] = y
+        textoAFichero.append(f"2:{abajo}|{arriba}\n")
+        #======================================================
+        posAux = self.girarPieza(-pi/2)
+        abajo = [-1 for i in range(0,4)]
+        arriba = [-1 for i in range(0,4)]
+        for x,y in posAux:
+            if abajo[x] == -1 or abajo[x] - 1 < y:
+                abajo[x] = y+1
+            if arriba[x] == -1 or arriba[x] > y:
+                arriba[x] = y
+        textoAFichero.append(f"3:{abajo}|{arriba}\n")
+
+
+        textoAFichero.append(f"{self.posicionXPieza}|{self.posicionYPieza}\n")
+        with open("ficherosComunos/estadoJuegoSimple.richi","w") as archivo:
+            for i in textoAFichero:
+                archivo.write(i)
+
+
+    def escanearJuego(self):
+        self.base = [self.alto for i in range(0,self.ancho)] # la idea es que el primer objeto ponemos la altura
+        self.listaPosicionesFichas = [] #Aqui vamos a meter todas las posciones
+        for j in range(0, self.alto):
+            for i in range(0 , self.ancho):
+                match self.casillasDict[(i,j)].tipo:
+                    case "Vacio":
+                        pass
+                    case "Casilla":
+                        if self.base[i] == self.alto:
+                            self.base[i] = j
+                    case "Pieza":
+                        self.listaPosicionesFichas.append((i - self.posicionXPieza,j - self.posicionYPieza))
+                    case _:
+                        print("error en escaneo")
+        
+        #print(f"base -> {self.base}")
+        #print(f"lista fichero -> {self.listaPosicionesFichas}")
+
+    def girarPieza(self , angulo):
+        nuevaPieza = self.listaPosicionesFichas
+        if angulo != 0:
+            nuevaPieza = []
+            for x,y in self.listaPosicionesFichas:
+                nuevaPieza.append( ( int(round(x*cos(angulo) - y *sin (angulo) , 0  )), int(round(x * sin(angulo) + y * cos(angulo) , 0)) ) )
+            moverX = 0
+            moverY = 0
+            for x,y in nuevaPieza:
+                if moverX > x:
+                    moverX = x
+                if moverY > y:
+                    moverY = y
+            if moverX != 0 or moverY != 0:
+                aux = []
+                for x,y in nuevaPieza:
+                    aux.append((x - moverX , y - moverY))
+                nuevaPieza = aux
+        #print(f"nuevo posicion -> {nuevaPieza}")
+        return nuevaPieza
 
     def recibirHeuristica(self):
         res = ""

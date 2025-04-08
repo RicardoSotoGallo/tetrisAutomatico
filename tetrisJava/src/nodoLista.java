@@ -74,7 +74,7 @@ public class nodoLista extends nodo {
         Integer minimaBajada   = base.stream().map(t -> entrada.get(2) - t ).min(Integer::compareTo).get();
         errorLeve = maximo - minimo;
         if(minimaAltura <= minimaBajada) condicionMejorPieza = true;
-        this.valorHeuristico = - minimaAltura - errorLeve*100 - errorGrabe * 10000;
+        this.valorHeuristico = - minimaAltura - errorLeve*5 - errorGrabe * 10000;
 
     }
     @Override
