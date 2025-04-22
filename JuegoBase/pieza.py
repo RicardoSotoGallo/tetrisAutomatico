@@ -19,10 +19,12 @@ class conjuntoDePiezas():
                         y = int(y)
                         self.diccionarioPiezas[nombreFichaActual].append((x,y))
                 contarLinea = (contarLinea + 1)%2
+    
     def devolverPiezaPosiciones(self,tipo:"str",x:'int',y:'int'):
         return list(
             map(lambda i : (i[0]+x,i[1]+y) , self.diccionarioPiezas[tipo])
         )
+    
     def devolverPiezaSinPosicion(self,tipo:'str'):
         return self.diccionarioPiezas[tipo]
 
