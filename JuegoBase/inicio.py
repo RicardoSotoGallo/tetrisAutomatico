@@ -2,6 +2,7 @@ from random import random,choice
 from math import cos , sin , pi
 import subprocess
 from pieza import conjuntoDePiezas
+#gymnasiun
 class hueco():
     tipo = None
     def __init__(self,tipo):
@@ -39,7 +40,7 @@ class juego():
                 self.casillasDict[(i,j)] = hueco("Vacio")
         self.actualizarPieza()
         #self.bucleJugable()
-        self.bucleJugableConFichero(40,False)
+        self.bucleJugableConFichero(50,False)
     
     def bucleJugableConFichero(self,iteraciones, teclado):
         
@@ -379,7 +380,6 @@ class juego():
         texto += str(self.girarPieza(-pi/2))+"\n"
         with open("ficherosComunos/estadoJuegoDic.richi","w") as fichero:
             fichero.write(texto)
-
 
     def dibujarJuegoFicheroTodoNumero(self , n):
         texto = ""
