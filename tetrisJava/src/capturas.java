@@ -24,7 +24,7 @@ public class capturas {
         //hacerCapturas();
         String etiqueta = "verde";
         String imagen = "tetrisJava/imagenes/tocho.png";
-        String pesos = "tetrisJava/imagenes/tochoVerde.png";
+        String pesos = "tetrisJava/imagenes/tochoNaranja.png";
         leerCapturas(imagen
         ,pesos
         ,etiqueta
