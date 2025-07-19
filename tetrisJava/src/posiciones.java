@@ -7,20 +7,20 @@ public class posiciones {
     private List<Integer> y;
     public Integer XMin,XMax;
     public Integer YMin,YMax;
-    private Integer divisionX,divisionY;
+    public  Integer divisionX,divisionY;
     public posiciones(){
         x = new ArrayList<>();
         y = new ArrayList<>();
     }
-    public void cacularDivisiones(Integer margenX , Integer margenY , Integer divisionX, Integer divisionY){
-        if(margenX > 0 && margenY > 0 && divisionX > 2 && divisionY >2){
+    public void cacularDivisiones(Integer margenX , Integer margenY , Integer divisionXi, Integer divisionYi){
+        if(margenX > 0 && margenY > 0 && divisionXi > 2 && divisionYi >2){
             int inicioX = XMin + margenX;
             int tamanoX = XMax - (inicioX + margenX);
             int inicioY = YMin + margenY;
             int tamanoY = YMax - (inicioY + margenY);
             if (tamanoX > 0 && tamanoY > 0) {
-                divisionX = divisionX -1;
-                divisionY = divisionY -1;
+                divisionX = divisionXi -1;
+                divisionY = divisionYi -1;
                 for(int i = 0 ; i < divisionX+1; i++){
                     x.add(inicioX + Math.round( tamanoX * i/divisionX ));
                 }

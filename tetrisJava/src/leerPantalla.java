@@ -1,4 +1,8 @@
+import java.awt.AWTException;
 import java.awt.Color;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -6,12 +10,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import javax.imageio.ImageIO;
+
+//https://tetrismania.net/
 /*
  * Esta es el codigo de leer capturas
  */
 public class leerPantalla{
-    private int altura,anchura;
-    public static void main(String[] args) throws IOException{
+    private int altura,anchura,inicioCuadradoJuegoW,inicioCuadradoJuegoH;
+    HashMap<String,posiciones> casilla = new HashMap<>();
+
+    public static void main(String[] args) throws IOException, AWTException,InterruptedException{
         System.out.println("Buenas");
         leerPantalla lector = new leerPantalla();
         HashMap<String,gradiente> mapaGradiente = lector.iniciarGradiente();
@@ -21,24 +29,113 @@ public class leerPantalla{
         //Aqui empezamos a realizar recortes y medidas
         //"tetrisJava/imagenes/carpetaAuxiliar/captura.png"
         //"tetrisJava/imagenes/tocho.png"
-        lector.medidas("tetrisJava/imagenes/carpetaAuxiliar/captura.png",mapaGradiente);
+        /*File imagenF = new File("tetrisJava/imagenes/carpetaAuxiliar/captura.png");
+        BufferedImage imagen = ImageIO.read(imagenF);
+        
+        lector.medidas(imagen,mapaGradiente);
+
+        imagenF = new File("tetrisJava/imagenes/tocho.png");
+        imagen = ImageIO.read(imagenF);
+
+        lector.interpretarImagen(imagen, mapaGradiente);*/
+        BufferedImage imagen = lector.hacerCapturas();
+        lector.medidas(imagen,mapaGradiente);
+        System.out.println("Medidas realizadas se inicia dentro de un tiempo 10 segundos");
+        Thread.sleep(10000);
+        while(true){
+            imagen = lector.hacerCapturas();
+            lector.interpretarImagen(imagen, mapaGradiente);
+            Thread.sleep(500);
+        }
+        //File archivo = new File("tetrisJava/pruebas.png");
+        //ImageIO.write(imagen, "png", archivo);
+        /*
+         * File archivo = new File("tetrisJava/imagenes/captura"+i+".png");
+                ImageIO.write(imagen, "png", archivo);
+         */
+
+
     }
 
-    private void medidas(String ubi,HashMap<String,gradiente> mapaGradiente) throws IOException{
+    public static BufferedImage hacerCapturas() throws InterruptedException, AWTException{
+        BufferedImage imagen = new BufferedImage(100, 100, 1);
+        try {
+            // Crear instancia de Robot
+            Robot robot = new Robot();
+
+            // Obtener el tamaño de la pantalla
+            Rectangle areaPantalla = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+            areaPantalla.setSize(areaPantalla.width/2, areaPantalla.height);
+            imagen = robot.createScreenCapture(areaPantalla);
+
+        } catch (AWTException e) {
+            System.err.println("Error al capturar pantalla: " + e.getMessage());
+            }
+        return imagen;
+    }
+
+    private void interpretarImagen(BufferedImage imagen,HashMap<String,gradiente> mapaGradiente){
+        BufferedImage recorte = imagen.getSubimage(inicioCuadradoJuegoW, inicioCuadradoJuegoH,
+                            anchura, altura);
+        gradiente fondo1 = mapaGradiente.get("fondo1");
+        HashMap<String,String> interpretacion = new HashMap<>();
+        String ROJO = "\u001B[31m";
+        String AZUL = "\u001B[34m";
+        String RESET = "\u001B[0m";
+        String texto;
+        posiciones pos;
+        double puntacion = 0;
+        int div = 0;
+        Color c;
+        for(int i = 0; i < 10;i++){
+            for(int j = 0; j < 20;j++){
+                texto = i+"-"+j;
+                pos = casilla.get(texto);
+                puntacion = 0;
+                div = (pos.divisionX+1)*(pos.divisionY+1);
+                for(int a = 0; a < (pos.divisionX+1);a++){
+                    for(int b = 0; b < (pos.divisionY+1);b++){
+                        c =new Color(recorte.getRGB(pos.getpixelX(a), pos.getpixelY(b)));
+                        puntacion = puntacion + fondo1.esColor(c.getRed(), c.getBlue(), c.getGreen());
+                    }
+                }
+                if(puntacion/div > 0.75){
+                    interpretacion.put(texto, ROJO+"U"+RESET);
+                }else{
+                    interpretacion.put(texto, AZUL+"P"+RESET);
+                }
+
+            }
+        }
+
+        
+        String textoEnviar = "";
+        for(int j = 0; j < 20;j++){
+            for(int i = 0; i < 10;i++){
+                texto = i+"-"+j;
+                textoEnviar += interpretacion.get(texto);
+            }
+            textoEnviar += "\n";
+        }
+        textoEnviar += "==========================";
+        System.out.println(textoEnviar);
+    }
+
+    private void medidas(BufferedImage imagen,HashMap<String,gradiente> mapaGradiente) throws IOException{
         gradiente margen,fondo1,fondo2;
         margen = mapaGradiente.get("margen");
         fondo1 = mapaGradiente.get("fondo1");
         fondo2 = mapaGradiente.get("fondo2");
-        File imagenF = new File(ubi);
-        BufferedImage imagen = ImageIO.read(imagenF);
+        
+        
         int h,w;
         h = imagen.getHeight()/2;
         w = imagen.getWidth();
         int estado = 0;
-        int inicioCuadradoJuegoW = 0;
-        int inicioCuadradoJuegoH = 0;
+        inicioCuadradoJuegoW = 0;
+        inicioCuadradoJuegoH = 0;
         int correctoAux = 0; 
-        HashMap<String,posiciones> casilla = new HashMap<>();
+        
 
         Color color;
         altura = 0;
@@ -230,7 +327,7 @@ public class leerPantalla{
                 casillaAux.cacularDivisiones(3, 3, 4, 4);
                 //recorte.setRGB(casillaAux.XMin, casillaAux.YMin, Color.pink.getRGB());
                 //recorte.setRGB(casillaAux.XMax, casillaAux.YMax, Color.blue.getRGB());
-                System.out.println(casillaAux);
+                //System.out.println(casillaAux);
                 for(int ii = 0; ii < 4;ii++){
                     for(int jj = 0;jj<4;jj++){
                         recorte.setRGB(casillaAux.getpixelX(ii), casillaAux.getpixelY(jj), Color.red.getRGB());
