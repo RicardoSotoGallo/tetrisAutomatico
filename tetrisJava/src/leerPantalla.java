@@ -6,7 +6,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import javax.imageio.ImageIO;
-
+/*
+ * Esta es el codigo de leer capturas
+ */
 public class leerPantalla{
     private int altura,anchura;
     public static void main(String[] args) throws IOException{
@@ -17,7 +19,9 @@ public class leerPantalla{
         System.out.println(mapaGradiente);
         //=========================
         //Aqui empezamos a realizar recortes y medidas
-        lector.medidas("tetrisJava/imagenes/tocho.png",mapaGradiente);
+        //"tetrisJava/imagenes/carpetaAuxiliar/captura.png"
+        //"tetrisJava/imagenes/tocho.png"
+        lector.medidas("tetrisJava/imagenes/carpetaAuxiliar/captura.png",mapaGradiente);
     }
 
     private void medidas(String ubi,HashMap<String,gradiente> mapaGradiente) throws IOException{
@@ -33,6 +37,9 @@ public class leerPantalla{
         int estado = 0;
         int inicioCuadradoJuegoW = 0;
         int inicioCuadradoJuegoH = 0;
+        int correctoAux = 0; 
+        HashMap<String,posiciones> casilla = new HashMap<>();
+
         Color color;
         altura = 0;
         anchura = 0;
@@ -109,6 +116,128 @@ public class leerPantalla{
         BufferedImage recorte = imagen.getSubimage(inicioCuadradoJuegoW, inicioCuadradoJuegoH,
                             anchura, altura);
 
+
+        //=============================
+        //ahora obtenemos los cuadraditos y los puntos
+        h = recorte.getHeight()/2;
+        w = recorte.getWidth();
+        correctoAux = 0;
+        int aux = 0;
+        int maximo = 0;
+        //EjeX
+        while(correctoAux == 0){
+            for(int i = 0; i < w ; i ++){
+                if(correctoAux%4 == 0){
+                    casilla.put(correctoAux/4+"x", new posiciones());
+                    maximo = correctoAux/4;
+                }
+                color = new Color(recorte.getRGB(i, h));
+                //recorte.setRGB(i, h, Color.pink.getRGB());
+                if(correctoAux%2 == 0){
+                    if(fondo2.esColor(color.getRed(), color.getBlue(), color.getGreen()) == 1.0){
+                        //recorte.setRGB(i, h, Color.blue.getRGB());
+                        if(aux == 0){
+                            casilla.get(maximo+"x").XMin = i;
+                            aux = 1;
+                        }else{
+                            casilla.get(maximo+"x").XMax = i;
+                            aux = 0;
+                        }
+                        correctoAux++;
+                    }
+                }else{
+                    if(fondo2.esColor(color.getRed(), color.getBlue(), color.getGreen()) != 1.0){
+                        //recorte.setRGB(i, h, Color.red.getRGB());
+                        correctoAux++;
+                    }
+                }
+            }
+            if(correctoAux <= 35){
+                correctoAux = 0;
+                h = h -1;
+                aux = 0;
+            }
+        }
+        /*for(int i = 0; i < maximo;i++){
+            System.out.println(casilla.get(i+"x")+"->"+i +"x");
+        }
+        System.out.println("X -> "+maximo);*/
+        //EjeY
+        h = recorte.getHeight();
+        w = recorte.getWidth()/2;
+        correctoAux = 0;
+        aux = 0;
+        maximo = 0;
+        while(correctoAux == 0){
+            for(int i = 0; i < h ; i ++){
+                if(correctoAux%4 == 0){
+                    casilla.put(correctoAux/4+"y", new posiciones());
+                    maximo = correctoAux/4;
+                }
+                color = new Color(recorte.getRGB(w, i));
+                //recorte.setRGB(w, i, Color.pink.getRGB());
+                if(correctoAux%2 == 0){
+                    if(fondo2.esColor(color.getRed(), color.getBlue(), color.getGreen()) == 1.0){
+                        //recorte.setRGB(w, i, Color.blue.getRGB());
+                        if(aux == 0){
+                            casilla.get(maximo+"y").YMin = i;
+                            aux = 1;
+                        }else{
+                            casilla.get(maximo+"y").YMax = i;
+                            aux = 0;
+                        }
+                        correctoAux++;
+                    }
+                }else{
+                    if(fondo2.esColor(color.getRed(), color.getBlue(), color.getGreen()) != 1.0){
+                        //recorte.setRGB(w, i, Color.red.getRGB());
+                        correctoAux++;
+                    }
+                }
+            }
+            if(correctoAux <= 75){
+                correctoAux = 0;
+                w = w -1;
+                aux = 0;
+            }
+        }
+        /*for(int i = 0; i < maximo;i++){
+            System.out.println(casilla.get(i+"y")+"->"+i+"y");
+        }
+        System.out.println("Y -> "+maximo);*/
+
+        //Ahora juntamos todo
+        posiciones casillaAux;
+        String texto;
+        for(int i = 0 ; i < 10; i++){
+            for(int j = 0; j < 20; j++){
+                casillaAux = new posiciones();
+                texto = i+"-"+j;
+                //System.out.println(texto);
+                casillaAux.XMin = casilla.get(i+"x").XMin;
+                casillaAux.XMax = casilla.get(i+"x").XMax;
+                casillaAux.YMin = casilla.get(j+"y").YMin;
+                casillaAux.YMax = casilla.get(j+"y").YMax;
+                casilla.put(texto, casillaAux);
+            }
+        }
+
+        for(int i = 0 ; i < 10; i++){
+            for(int j = 0; j < 20; j++){
+                texto = i+"-"+j;
+                //System.out.println(casilla.get(texto)+"->"+texto);
+                casillaAux = casilla.get(texto);
+                casillaAux.cacularDivisiones(3, 3, 4, 4);
+                //recorte.setRGB(casillaAux.XMin, casillaAux.YMin, Color.pink.getRGB());
+                //recorte.setRGB(casillaAux.XMax, casillaAux.YMax, Color.blue.getRGB());
+                System.out.println(casillaAux);
+                for(int ii = 0; ii < 4;ii++){
+                    for(int jj = 0;jj<4;jj++){
+                        recorte.setRGB(casillaAux.getpixelX(ii), casillaAux.getpixelY(jj), Color.red.getRGB());
+                    }
+                }
+            }
+        }
         //=============================
         //Guardamos
         
@@ -119,6 +248,7 @@ public class leerPantalla{
         ImageIO.write(recorte, "png", recort);
 
     }
+    
     private HashMap<String,gradiente> iniciarGradiente(){
         HashMap<String,gradiente> res = new HashMap<>();
         res.put("fondo1", 
@@ -131,6 +261,7 @@ public class leerPantalla{
                 obtenerGradiente("tetrisJava/gradienteColores/margen.txt"));
         return res;
     }
+    
     private static gradiente obtenerGradiente(String dire){
         gradiente res = new gradiente(3);
         
