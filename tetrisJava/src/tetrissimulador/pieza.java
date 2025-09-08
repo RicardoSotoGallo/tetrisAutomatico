@@ -166,29 +166,19 @@ public class pieza {
     }
     public boolean estaPieza(int x,int y,int p){
         boolean res = false;
-        List posX = new ArrayList<>();
-        List posY = new ArrayList<>();
+        List posAux = new ArrayList<>();
         if(p == 0){
-            posX = posicionX0;
-            posY = posicionY0;
+            posAux = pos0;
         }else if(p == 1){
-            posX = posicionX1;
-            posY = posicionY1;
+            posAux = pos1;
         }else if(p == 2){
-            posX = posicionX2;
-            posY = posicionY2;
+            posAux = pos2;
         }else if(p == 3){
-            posX = posicionX3;
-            posY = posicionY3;
+            posAux = pos3;
         }
 
 
-        for(int i = 0; i < tamano;i++){
-            if(posX.get(i).equals(x) && posY.get(i).equals(y)){
-                res = true;
-                break;
-            }
-        }
+        res = posAux.contains(x+"-"+y);
         return res;
     }
     public void mostrarPieza(int pose){
