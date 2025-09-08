@@ -1,7 +1,11 @@
 
+import tetrissimulador.juego;
+
+
 public class pruebas {
     public static void main(String[] args) {
-        System.out.println("Buenas");
+        juego j = new juego();
+        //System.out.println("Buenas");
         /*datosEstado d = new datosEstado();
         d.path = "ficherosComunos/estadoJuegoDic22.richi";
         d.leerFichero();
