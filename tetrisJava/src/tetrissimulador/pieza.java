@@ -10,6 +10,8 @@ public class pieza {
     List<Integer> posicionX0;
     List<Integer> posicionY0;
     List<String> pos0;
+    List<Integer> alt0;
+    Integer ant0;
     Integer min0 = minimo;
     Integer max0 = maximo;
 
@@ -17,14 +19,20 @@ public class pieza {
     List<Integer> posicionX1;
     List<Integer> posicionY1;
     List<String> pos1;
+    List<Integer> alt1;
+    Integer ant1;
 
     List<Integer> posicionX2;
     List<Integer> posicionY2;
     List<String> pos2;
+    List<Integer> alt2;
+    Integer ant2;
 
     List<Integer> posicionX3;
     List<Integer> posicionY3;
     List<String> pos3;
+    List<Integer> alt3;
+    Integer ant3;
     List<Integer> min;
     List<Integer> max;
     String[] posi;
@@ -37,22 +45,28 @@ public class pieza {
         posicionX0 = new ArrayList<>();
         posicionY0 = new ArrayList<>();
         pos0 = new ArrayList<>();
+        alt0 = new ArrayList<>();
 
         posicionX1 = new ArrayList<>();
         posicionY1 = new ArrayList<>();
         pos1 = new ArrayList<>();
+        alt1 = new ArrayList<>();
 
         posicionX2 = new ArrayList<>();
         posicionY2 = new ArrayList<>();
         pos2 = new ArrayList<>();
+        alt2 = new ArrayList<>();
 
         posicionX3 = new ArrayList<>();
         posicionY3 = new ArrayList<>();
         pos3 = new ArrayList<>();
+        alt3 = new ArrayList<>();
         min = new ArrayList<>();
         max = new ArrayList<>();
 
         Integer aux;
+        Integer auxmax = 0;
+        
         
         posi = in0.split("a");
         for(String i : posi){
@@ -76,6 +90,21 @@ public class pieza {
         }
         min.add(min0);
         max.add(max0);
+        String[] k;
+        Integer l,o;
+        for(int i = 0; i < max0 + 1; i++){
+            alt0.add(0);
+            for(String j : pos0){
+                k = j.split("-");
+                l = Integer.valueOf(k[0]);
+                o = Integer.valueOf(k[1]);
+                if(l == i){
+                    if(o >= alt0.get(i)){
+                        alt0.set(i, o +1);
+                    }
+                }
+            }
+        }
         min0 = minimo;
         max0 = maximo;
         posi = in1.split("a");
@@ -102,9 +131,23 @@ public class pieza {
         }
         min.add(min0);
         max.add(max0);
+
+        for(int i = 0; i < max0 + 1; i++){
+            alt1.add(0);
+            for(String j : pos1){
+                k = j.split("-");
+                l = Integer.valueOf(k[0]);
+                o = Integer.valueOf(k[1]);
+                if(l == i){
+                    if(o >= alt1.get(i)){
+                        alt1.set(i, o+1);
+                    }
+                }
+            }
+        }
+
         min0 = minimo;
         max0 = maximo;
-
         posi = in2.split("a");
         for(String i : posi){
             String[] p = i.split("-");
@@ -129,6 +172,21 @@ public class pieza {
 
         min.add(min0);
         max.add(max0);
+
+        for(int i = 0; i < max0 + 1 ; i++){
+            alt2.add(0);
+            for(String j : pos2){
+                k = j.split("-");
+                l = Integer.valueOf(k[0]);
+                o = Integer.valueOf(k[1]);
+                if(l == i){
+                    if(o >= alt2.get(i)){
+                        alt2.set(i, o+1);
+                    }
+                }
+            }
+        }
+        
         min0 = minimo;
         max0 = maximo;
 
@@ -154,6 +212,21 @@ public class pieza {
         }
         min.add(min0);
         max.add(max0);
+
+        for(int i = 0; i < max0 + 1; i++){
+            alt3.add(0);
+            for(String j : pos3){
+                k = j.split("-");
+                l = Integer.valueOf(k[0]);
+                o = Integer.valueOf(k[1]);
+                if(l == i){
+                    if(o >= alt3.get(i)){
+                        alt3.set(i, o+1);
+                    }
+                }
+            }
+        }
+
         tamano = posicionX0.size();
 
     }
@@ -164,6 +237,7 @@ public class pieza {
             System.out.println("====");
         }
     }
+    
     public boolean estaPieza(int x,int y,int p){
         boolean res = false;
         List posAux = new ArrayList<>();
@@ -181,6 +255,7 @@ public class pieza {
         res = posAux.contains(x+"-"+y);
         return res;
     }
+
     public void mostrarPieza(int pose){
         String texto = "";
         for(int i = 0; i < 4;i++){
