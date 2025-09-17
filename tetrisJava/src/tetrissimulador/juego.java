@@ -1,6 +1,7 @@
 package tetrissimulador;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
@@ -20,9 +21,9 @@ public class juego {
     Integer ancho;
     Integer piezaActual, giroActual,ejeXActual;
     
-    public juego(){
-        alto = 20;
-        ancho = 10;
+    public juego(Integer altura, Integer anchura){
+        alto = altura;
+        ancho = anchura;
         nombrePieza = new ArrayList<>();
         tablero = new HashMap<>();
         piezas = new HashMap<>();
@@ -109,9 +110,9 @@ public class juego {
             
 
     }
-    
+
     public void iniciar(){
-        piezaActual = 1;
+        piezaActual = 0;
         giroActual = 0;
         ejeXActual = 0;
         boolean abierto = true;
@@ -122,12 +123,35 @@ public class juego {
             borrarLlena();
             dibujar();
             
-            System.out.println(devolverAlturas());
+            System.out.println(devolverEstado());
         }
 
     }
+
+    public String iniciarDesdeEstadoCubo(String estado){
+        String res = "";
+        piezaActual = 0;
+        giroActual = 0;
+        ejeXActual = 0;
+        tablero = new HashMap<>();
+        Integer cAux;
+        Integer xx = 0;
+        for(char c : estado.toCharArray()){
+            cAux = Character.getNumericValue(c);
+            for(int i = 0; i < alto;i++){
+                if (alto - i > cAux) {
+                    tablero.put(new vector2D(xx, i), 'n');
+                }else{
+                    tablero.put(new vector2D(xx, i), 'o');
+                }
+            }
+            xx ++;
+        }
+        return devolverEstado();
+
+    }
     
-    private void dibujar(){
+    public void dibujar(){
         String res = "";
         List<vector2D> posicionesPieza = piezas.get(nombrePieza.get(piezaActual)).devolverPosiciones(giroActual);
         vector2D auxVector,auxVectorPieza;
@@ -259,7 +283,31 @@ public class juego {
 
         }
     }
-/*
+
+    public String devolverEstado(){
+        Integer maximo;
+        Integer minimo;
+        String res = "";
+        List<Integer> ls = devolverAlturas();
+        Integer m = ls.stream().min(Comparator.naturalOrder()).get();
+        for(int i : devolverAlturas()){
+            res += (i-m);
+        }
+        res += "-"+piezaActual+"-"+giroActual;
+        res += "a";
+        for(int giro = 0; giro < 4;giro ++){
+
+            maximo = piezas.get(nombrePieza.get(piezaActual)).devolverMaximo(giro);
+            minimo = piezas.get(nombrePieza.get(piezaActual)).devolverMin(giro);
+            for(int xx = 0 ; xx < ancho ; xx++){
+                if(xx + minimo >= 0 && xx+maximo <= ancho){
+                    res += xx+"/"+giro+"-";
+                }
+            }
+        }
+        return res.substring(0,res.length()-1);
+    }
+    /*
     public void iniciar(){
         
         Scanner sc = new Scanner(System.in);
