@@ -12,11 +12,17 @@ public class juego {
     private HashMap<vector2D,Character> tablero;
     private HashMap<String,pieza> piezas;
     List<String> nombrePieza;
-    public static final String RESET = "\u001B[0m";
-    public static final String ROJO = "\u001B[31m";
-    public static final String VERDE = "\u001B[32m";
-    public static final String AMARILLO = "\u001B[33m";
-    public static final String AZUL = "\u001B[34m";
+    private boolean hayFinal;
+    private Integer iteracionesMaxima;
+    private Integer alturaMaxima;
+    private Integer mediaAlturaMaxima;
+    private Integer contarIteraciones;
+
+    private static final String RESET = "\u001B[0m";
+    private static final String ROJO = "\u001B[31m";
+    private static final String VERDE = "\u001B[32m";
+    private static final String AMARILLO = "\u001B[33m";
+    private static final String AZUL = "\u001B[34m";
     Integer alto;
     Integer ancho;
     Integer piezaActual, giroActual,ejeXActual;
@@ -27,6 +33,10 @@ public class juego {
         nombrePieza = new ArrayList<>();
         tablero = new HashMap<>();
         piezas = new HashMap<>();
+        hayFinal = false;
+        iteracionesMaxima = -1;
+        alturaMaxima = -1;
+        mediaAlturaMaxima = -1;
         
         for(int x = 0; x < ancho;x++){
             for(int y = 0; y < alto;y++){
@@ -111,6 +121,22 @@ public class juego {
 
     }
 
+    public void configurarLimites(boolean hayF , Integer iterMax , Integer altMax , Integer medAltMax){
+        hayFinal = hayF;
+        iteracionesMaxima = iterMax;
+        alturaMaxima = altMax;
+        mediaAlturaMaxima = medAltMax;
+        contarIteraciones = 0;
+    }
+
+    public void configurarLimites(boolean  hayF){
+        configurarLimites(hayF, -1, -1, -1);
+    }
+
+    public void configurarLimites(boolean  hayF , Integer iterMax){
+        configurarLimites(hayF, iterMax, -1, -1);
+    }
+
     public void iniciar(){
         piezaActual = 0;
         giroActual = 0;
@@ -150,13 +176,33 @@ public class juego {
         return devolverEstado();
 
     }
+    
     public String realizarMovimiento(Integer posicion , Integer giro){
+        contarIteraciones += 1;
         giroActual = giro;
         ejeXActual = -posicion;
         bajarPieza();
         borrarLlena();
+        String res = devolverEstado();
         //dibujar();
-        return devolverEstado();
+        if (hayFinal) {
+            if(iteracionesMaxima > 0){
+                if(contarIteraciones >= iteracionesMaxima) res = "final";
+            }
+            if (alturaMaxima > 0) {
+                if(
+                    devolverAlturas().stream().anyMatch(t -> t > alturaMaxima)
+                ) res = "final";
+            }
+            if (mediaAlturaMaxima > 0) {
+                if(
+                    devolverAlturas().stream().mapToInt(Integer::intValue)
+                    .average()
+                    .orElse(0.0) > mediaAlturaMaxima
+                ) res = "final";
+            }
+        }
+        return res;
 
     }
     

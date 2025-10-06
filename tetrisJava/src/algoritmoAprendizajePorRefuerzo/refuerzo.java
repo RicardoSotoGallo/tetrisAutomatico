@@ -38,77 +38,83 @@ public class refuerzo {
         juego j = new juego(6,4);
         float puntuacion;
         List<String> lsNoVisitidos;
-        for(int ii = 0 ; ii < 10; ii++){
-            random = new Random();
-            j = new juego(6,4);
-            textoDeEstado = j.iniciarDesdeEstadoCubo("0000");
-            for(int i = 0; i < 100000 ; i++){
-                
-                
-                j.dibujar();
-                splitearAccionesCubo(textoDeEstado);
-                addNuevasAcciones();
-                //====== Aqui puntuamos los estados
-                maximoAltura = -1;
-                minimaAltura = 100;
-                for(int o = 0; o < estadoActual.length();o++){
-                    auxInt = Character.getNumericValue((estadoActual.charAt(o)));
-                    if (maximoAltura < auxInt) {
-                        maximoAltura = auxInt;
-                    }
-                    if (minimaAltura > auxInt) {
-                        minimaAltura = auxInt;
-                    }
+        for(int ii = 0 ; ii < 5; ii++){
+            random = new Random(); //iniciamos numero aleatorio
+            j = new juego(6,4); //iniciamos juego
+            
+            for(int i = 0; i < 100 ; i++){ //la idea es transformar esto por el numero de juegos jugados
+                textoDeEstado = j.iniciarDesdeEstadoCubo("0000");
+                //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
+                j.configurarLimites(true, 50, 5, 4); 
+                while(textoDeEstado != "final"){
+                    //
+                    j.dibujar();
+                    splitearAccionesCubo(textoDeEstado);
+                    addNuevasAcciones();
+                    //====== Aqui puntuamos los estados
+                    maximoAltura = -1;
+                    minimaAltura = 100;
+                    for(int o = 0; o < estadoActual.length();o++){
+                        auxInt = Character.getNumericValue((estadoActual.charAt(o)));
+                        if (maximoAltura < auxInt) {
+                            maximoAltura = auxInt;
+                        }
+                        if (minimaAltura > auxInt) {
+                            minimaAltura = auxInt;
+                        }
 
-                }
-                puntuacion = 0.0f;
-                for(int o = 0; o < estadoActual.length();o++){
-                    auxInt = Character.getNumericValue((estadoActual.charAt(o)));
-                    puntuacion += auxInt;
-                }
-                puntuacion = puntuacion/estadoActual.length()-maximoAltura;
-                qsa.put(estadoAnterior, puntuacion);
-                //======= Aqui elegimos si es explorar o es avanzar
-                //System.out.println(qsa);
-                valorMaximoAccion = -100;
-                numeroAccionesPuntuadas = 0;
-                maximaAcciones = 0;
-                lsNoVisitidos = new ArrayList<>();
-                for(String k : acciones){
-                    auxFloat = qsa.get(estadoActual+"-"+k);
-                    if(auxFloat != 0){
-                        numeroAccionesPuntuadas ++;
+                    }
+                    puntuacion = 0.0f;
+                    for(int o = 0; o < estadoActual.length();o++){
+                        auxInt = Character.getNumericValue((estadoActual.charAt(o)));
+                        puntuacion += auxInt;
+                    }
+                    puntuacion = puntuacion/estadoActual.length()-maximoAltura;
+                    qsa.put(estadoAnterior, puntuacion);
+                    //======= Aqui elegimos si es explorar o es avanzar
+                    //System.out.println(qsa);
+                    valorMaximoAccion = -100;
+                    numeroAccionesPuntuadas = 0;
+                    maximaAcciones = 0;
+                    lsNoVisitidos = new ArrayList<>();
+                    for(String k : acciones){
+                        auxFloat = qsa.get(estadoActual+"-"+k);
+                        if(auxFloat != 0){
+                            numeroAccionesPuntuadas ++;
+                            
+                        }else{
+                            lsNoVisitidos.add(k);
+                        }
+                        if (valorMaximoAccion < auxFloat) {
+                            valorMaximoAccion = auxFloat;
+                            maximaAcciones = Integer.valueOf(k);
+                        }
                         
+                    }
+                    //======
+                    auxFloat =  (float) ( - ( numeroAccionesPuntuadas/acciones.size() - 1)*0.9 + 0.1);
+                    aletarioInt = random.nextInt( acciones.size() );
+                    aleatorio = random.nextFloat();
+                    if (aleatorio < auxFloat) {
+                        if (numeroAccionesPuntuadas != 0) {
+                            aux = acciones.get(aletarioInt).split("-");
+                            proximaAccion = Integer.valueOf(aux[0]);
+                        }else{
+                            aletarioInt = random.nextInt( lsNoVisitidos.size() );
+                            aux = lsNoVisitidos.get(aletarioInt).split("-");
+                            proximaAccion = Integer.valueOf(aux[0]);
+                        }
+                        
+                        System.out.println("Exploracion");
                     }else{
-                        lsNoVisitidos.add(k);
+                        proximaAccion = maximaAcciones;
+                        System.out.println("avance");
                     }
-                    if (valorMaximoAccion < auxFloat) {
-                        valorMaximoAccion = auxFloat;
-                        maximaAcciones = Integer.valueOf(k);
-                    }
-                    
+                    estadoAnterior = estadoActual+"-"+proximaAccion;
+                    textoDeEstado = j.realizarMovimiento(proximaAccion, 0);
+                    //===============
                 }
-                //======
-                auxFloat =  (float) ( - ( numeroAccionesPuntuadas/acciones.size() - 1)*0.9 + 0.1);
-                aletarioInt = random.nextInt( acciones.size() );
-                aleatorio = random.nextFloat();
-                if (aleatorio < auxFloat) {
-                    if (numeroAccionesPuntuadas != 0) {
-                        aux = acciones.get(aletarioInt).split("-");
-                        proximaAccion = Integer.valueOf(aux[0]);
-                    }else{
-                        aletarioInt = random.nextInt( lsNoVisitidos.size() );
-                        aux = lsNoVisitidos.get(aletarioInt).split("-");
-                        proximaAccion = Integer.valueOf(aux[0]);
-                    }
-                    
-                    System.out.println("Exploracion");
-                }else{
-                    proximaAccion = maximaAcciones;
-                    System.out.println("avance");
-                }
-                estadoAnterior = estadoActual+"-"+proximaAccion;
-                textoDeEstado = j.realizarMovimiento(proximaAccion, 0);
+                
             }
             try (FileWriter writer = new FileWriter("tetrisJava/ficherosEntrenados/episiodio"+ii+".txt")) {
                 for (String o : qsa.keySet()) {
@@ -125,13 +131,13 @@ public class refuerzo {
         j.dibujar();
         
         //System.out.println(textoDeEstado);
-        splitearAccionesCubo(textoDeEstado);
+        //splitearAccionesCubo(textoDeEstado);
         //System.out.println("estaodo -> "+estadoActual);
         //System.out.println("acciones -> "+acciones);
         
         //System.out.println(qsa);
         //System.out.println("==================");
-        String texto = j.realizarMovimiento(2, 0);
+        //String texto = j.realizarMovimiento(2, 0);
         //System.out.println(texto);
     }
 
