@@ -150,6 +150,15 @@ public class juego {
         return devolverEstado();
 
     }
+    public String realizarMovimiento(Integer posicion , Integer giro){
+        giroActual = giro;
+        ejeXActual = -posicion;
+        bajarPieza();
+        borrarLlena();
+        //dibujar();
+        return devolverEstado();
+
+    }
     
     public void dibujar(){
         String res = "";

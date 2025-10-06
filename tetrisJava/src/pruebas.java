@@ -9,6 +9,7 @@ public class pruebas {
         refuerzo i = new refuerzo();
         i.entrenar();
         
+        
 
     }
 }
