@@ -33,9 +33,9 @@ public class refuerzo {
      */
     public void entrenar(){
         anchoTablero = 4;
-        altoTablero =6;
+        altoTablero = 6;
         escalaValores = 100;
-        float factorAprendizaje = 0.1f, factorRecuerdo = 0.05f;
+        float factorAprendizaje = 0.6f, factorRecuerdo = 0.6f;
         String[] aux;
         Integer proximaAccion,accionAnterior;
         float auxFloat,auxFloat2;
@@ -146,7 +146,7 @@ public class refuerzo {
                         }
                         
                         //puntuacion = (puntuacion/estadoActual.length()-minimaAltura);
-                        puntuacion = ( altoTablero*anchoTablero *  altoTablero*anchoTablero * altoTablero*anchoTablero *  altoTablero*anchoTablero - puntuacion*puntuacion* puntuacion*puntuacion) ;//* escalaValores / (altoTablero*anchoTablero* altoTablero*anchoTablero * altoTablero*anchoTablero* altoTablero*anchoTablero );
+                        puntuacion = ( altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero - puntuacion * puntuacion * puntuacion * puntuacion) / (altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero );
 
                         /*
                         * Ahora sacamos las nuevas acciones y actualizamos el estado actual para que sea s^(t+1)
