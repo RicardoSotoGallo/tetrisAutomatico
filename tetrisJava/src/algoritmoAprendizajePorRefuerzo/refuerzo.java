@@ -1,10 +1,11 @@
 package algoritmoAprendizajePorRefuerzo;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+
+import tetrissimulador.Estado;
 import tetrissimulador.juego;
 /*
  * 
@@ -14,260 +15,202 @@ public class refuerzo {
     /*
      * qsa es esactamente Q(s,a)
      */
-    private HashMap<String,Float> qsa = new HashMap<>();
-    private String estadoActual;
-    private Integer posicion;
-    private Integer giro;
-    private List<String> acciones;
-    private String textoDeEstado;
-    private float aleatorio;
-    private int aletarioInt;
-    private Random random;
-    private int anchoTablero,altoTablero;
-    private float escalaValores;
+    private HashMap<String,Float> qsa = new HashMap<>();    // La lista de puntos
+    private float aleatorio;                                //Una variable aleatoria
+    private int aletarioInt;                                //Una variable aleatoria entera
+    private Random random;                                  //La funcion rando
+    private int anchoTablero,altoTablero;                   //Anchura y altura de tablero
+
     /*
      * La idea es primero se inicia el juego eliguiendo altura y anchura
      * se usa la funcion dibujar para enseñar por consola el estado del juego
      * iniciar desde cubo es para colocar el juego en un estado concreto
      * splitear es para recibir el estado y sacar en estadoActual y acciones el estado del juego y el conjunto de acciones disponibles
      */
-    public void entrenar(){
-        anchoTablero = 4;
-        altoTablero = 6;
-        escalaValores = 100;
-        float factorAprendizaje = 0.6f, factorRecuerdo = 0.6f;
-        String[] aux;
-        Integer proximaAccion,accionAnterior;
+
+    /*
+    Cosas por realizar
+    -> splitearAccionesCubo(String t)
+    -> entrenar hay que reacerlo
+    -> crear una funcion para entrenar independiente de la entrada
+     */
+    public void entrenar(boolean reentrenar , int anchura , int altura  , int etapas , int numeroJuegos){
+        anchoTablero = anchura;
+        altoTablero = altura;
+        float factorAprendizaje = 0.3f, factorRecuerdo = 0.6f;
+        Integer proximaAccionX ,proximaAccionGiro;
         float auxFloat,auxFloat2;
         Integer maximaAcciones;
         float valorMaximoAccion;
-        Integer numeroAccionesPuntuadas;
-        String estadoAnteriorAct = "" , estadoAnterior = "";
-        List<String> listaAccionesAnteriores;
-        Integer maximoAltura,minimaAltura,auxInt;
+        Estado estadoAnterior , estadoSiguiente = null;
+        //List<String> listaAcciones;
         juego j = new juego(altoTablero,anchoTablero);
         float puntuacion;
-        List<String> lsNoVisitidos;
+        List<Integer> lsNoVisitidos;
+        String accionElegida;
+        String estadoMensaje;
+        parEstado salidasJuegos = null;
+        resultadoMovimiento resultadoMovimiento = null;
+        Integer iteracionesMedios = 0;
 
+        if( !reentrenar ) leerResultados(anchoTablero , altoTablero , 7);
 
-        for(int ii = 0 ; ii < 1; ii++){
+        for(int ii = 0 ; ii < etapas; ii++){
             random = new Random(); //iniciamos numero aleatorio
             j = new juego(altoTablero,anchoTablero); //iniciamos juego
-            
-            for(int i = 0; i < 50 ; i++){ //la idea es transformar esto por el numero de juegos jugados
-                textoDeEstado = j.iniciarDesdeEstadoCubo("0000");
-                //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
-                j.configurarLimites(true, 50, 5, 4); 
-                //Se hace al principio para arrancar
-                splitearAccionesCubo(textoDeEstado);
-                addNuevasAcciones();
-                while(textoDeEstado != "final"){
-                    /*
-                     * Aqui dibujamos el estado y adquirmos el esado
-                     */
-                    j.dibujar();
-                    
-                    
-                    
+            iteracionesMedios = 0;
+            for( int juegosTest = 0 ; juegosTest < 10 ; juegosTest++ ){
+                iteracionesMedios += jugarUna( j , false , 50, 15, 12 , "000000");
+            }
+            System.out.println( "E/J -> "+ii+" sobre "+etapas +" iteraciones -> "+(float) iteracionesMedios / 10);
+            if( iteracionesMedios/10 == 50.0 ){
+                break;
+            }
+            //iteracionesMedios = 0;
+            // ========== eleguimos realizar 50 partidas =======================
+            for(int i = 0; i < numeroJuegos ; i++){
+                //System.out.println( "E/J -> "+ii+"/"+i+" sobre "+etapas+"/"+numeroJuegos );
+                //la idea es transformar esto por el numero de juegos jugados
+                // Lo quitamos por el nuevo
+                // textoDeEstado = j.iniciarDesdeEstadoCubo("0000"); //esto lo tendremos que cambiar
+                salidasJuegos = inicarJuego( j  );
+                estadoMensaje = salidasJuegos.mensaje();
+                estadoSiguiente = salidasJuegos.estado();
 
-                    //======= Aqui elegimos si es explorar o es avanzar
-                    //System.out.println(qsa);
-                    valorMaximoAccion = -100;
-                    numeroAccionesPuntuadas = 0;
-                    maximaAcciones = 0;
-                    lsNoVisitidos = new ArrayList<>();
-                    
-                    for(String k : acciones){
-                        auxFloat = qsa.get(estadoActual+"-"+k);
-                        if(auxFloat != 0){
-                            numeroAccionesPuntuadas ++;
-                            
-                        }else{
-                            lsNoVisitidos.add(k);
-                        }
-                        if (valorMaximoAccion < auxFloat) {
-                            valorMaximoAccion = auxFloat;
-                            maximaAcciones = Integer.valueOf(k);
-                        }
-                        
-                    }
-                    //======
-                    auxFloat = 0.7f; //(float) ( - ( numeroAccionesPuntuadas/acciones.size() - 1)*0.9 + 0.1);
-                    aletarioInt = random.nextInt( acciones.size() );
-                    aleatorio = random.nextFloat();
-                    
-                    if (aleatorio < auxFloat) {
-                        //if (numeroAccionesPuntuadas != 0) {
-                        aux = acciones.get(aletarioInt).split("-");
-                        proximaAccion = Integer.valueOf(aux[0]);
-                        /*}else{
-                            aletarioInt = random.nextInt( lsNoVisitidos.size() );
-                            aux = lsNoVisitidos.get(aletarioInt).split("-");
-                            proximaAccion = Integer.valueOf(aux[0]);
-                        }*/
-                        
-                        System.out.println("Exploracion");
-                    }else{
-                        proximaAccion = maximaAcciones;
-                        System.out.println("avance");
-                    }
-                    
-                    estadoAnteriorAct = estadoActual+"-"+proximaAccion;
-                    estadoAnterior = estadoActual;
-                    accionAnterior = proximaAccion;
-                    listaAccionesAnteriores = new ArrayList<>(acciones);
-                    /*
-                     * Aqui realizamos el moviemiento
-                     */
-                    textoDeEstado = j.realizarMovimiento(proximaAccion, 0);
+                if(estadoMensaje.equals("Correcto")){
 
-                    if(textoDeEstado != "final"){
-                        //====== Aqui puntuamos los estados
-                        //En teoria ya no hace falta calcular el maximo ni el minimo
-                        /*maximoAltura = -1;
-                        minimaAltura = 100;
-                        
-                        for(int o = 0; o < estadoActual.length();o++){
-                            auxInt = Character.getNumericValue((estadoActual.charAt(o)));
-                            if (maximoAltura < auxInt) {
-                                maximoAltura = auxInt;
-                            }
-                            if (minimaAltura > auxInt) {
-                                minimaAltura = auxInt;
-                            }
-
-                        }*/
-                        
-                        puntuacion = 0.0f;
-                        //aqui optenemos las sumas de las alturas
-                        for(int o = 0; o < estadoActual.length();o++){
-                            auxInt = Character.getNumericValue((estadoActual.charAt(o)));
-                            puntuacion += auxInt;
-                        }
-                        
-                        //puntuacion = (puntuacion/estadoActual.length()-minimaAltura);
-                        puntuacion = ( altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero - puntuacion * puntuacion * puntuacion * puntuacion) / (altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero );
-
+                    while(estadoMensaje.equals("Correcto")){ //Tranquilo esta condicion se cambia luego
+                        //iteracionesMedios += 1;
                         /*
-                        * Ahora sacamos las nuevas acciones y actualizamos el estado actual para que sea s^(t+1)
-                        */
-                        splitearAccionesCubo(textoDeEstado);
-                        addNuevasAcciones();
-                        /*
-                        *  ya tenemos r^t que es puntuacion
-                        * tenemos s^t que es estadoAnteriorAct
-                        * tenemos s^(t+1) que es estadoActual
-                        * a^t es accion anterior
-                        * a' es acciones que es una lista
-                        */
+                         * Aqui dibujamos el estado y adquirmos el esado
+                         */
+                        //j.dibujar(); //aqui
 
-                        auxFloat = 0;
+                        resultadoMovimiento = siguienteEstado( j , estadoSiguiente);
+                        estadoMensaje = resultadoMovimiento.mensaje();
+                        accionElegida = resultadoMovimiento.movimientoElegido();
+                        estadoAnterior = resultadoMovimiento.estadoAnterior();
+                        estadoSiguiente = resultadoMovimiento.estadoActual();
+                        if(estadoMensaje.equals("Correcto")){
+                            //Vamos a empezar a calcular el refuerzo o puntucion. Este sera segun las alturas
+                            puntuacion = calcularPuntucaion(estadoSiguiente);
 
-                        for(String act : acciones){
-                            auxFloat2 = qsa.get( estadoActual+"-"+act );
-                            if (auxFloat2 > auxFloat) {
-                                auxFloat = auxFloat2;
+                            addNuevoEventos(estadoSiguiente);
+                            /*
+                             *  ya tenemos r^t que es puntuacion
+                             * tenemos s^t que es estadoAnteriorAct
+                             * tenemos s^(t+1) que es estadoActual
+                             * a^t es accion anterior
+                             * a' es acciones que es una lista
+                             */
+                            auxFloat = 0;
+                            Estado estadoAux;
+                            //listaAcciones = new ArrayList<>();
+                            String act;
+                            /* creo que hay que porbar todas las variaciones de pieza*/
+                            for( int pi = 0 ; pi < j.getNombrePieza().size() ; pi++ ){
+                                estadoAux = estadoSiguiente.copia(pi);
+
+                                auxFloat = 0;
+                                for( int accionFor = 0 ; accionFor < estadoAux.accionPosicion().size() ; accionFor ++ ){
+                                    act = crearEtiquetaEstado(estadoAux , accionFor);
+                                    auxFloat2 = qsa.getOrDefault(act, 0.0f);
+                                    if (auxFloat2 > auxFloat) {
+                                        auxFloat = auxFloat2;
+                                    }
+                                }
                             }
-                        }
-                        //auxFloat2 = qsa.get(estadoAnteriorAct);
-                        /*
-                        * Qsa(s^t , a) <- Qsa(s^t , a) + y * ( r^t + b *( max_a Qsa(s^(t+1) , a' - Qsa(s^t , a )) ) )
-                        */
-                        auxFloat2 = qsa.get(estadoAnteriorAct);
-                        System.out.println("nueva puntuacion de: "+estadoAnteriorAct+" era:"+auxFloat2+" puntuacion: "+puntuacion +" es ->"+
-                            (qsa.get(estadoAnteriorAct) 
-                                + factorAprendizaje 
-                                * (puntuacion 
-                                + factorRecuerdo*(auxFloat - qsa.get(estadoAnteriorAct))))
-                        );
-                        qsa.put(estadoAnteriorAct,
-                            qsa.get(estadoAnteriorAct) 
-                                + factorAprendizaje 
-                                * (puntuacion 
-                                + factorRecuerdo*(auxFloat - qsa.get(estadoAnteriorAct))
+                            /*auxFloat = 0;
+
+                            for(String act : listaAcciones){
+                                auxFloat2 = qsa.get( act );
+                                if (auxFloat2 > auxFloat) {
+                                    auxFloat = auxFloat2;
+                                }
+                            }
+                            auxFloat2 = qsa.get(accionElegida);
+                            /*System.out.println("nueva puntuacion de: "+accionElegida+" era:"+auxFloat2+" puntuacion: "+puntuacion +" es ->"+
+                                    (qsa.get(accionElegida)
+                                            + factorAprendizaje
+                                            * (puntuacion
+                                            + factorRecuerdo*(auxFloat - qsa.get(accionElegida))))
+                            );*/
+                            qsa.put(accionElegida,
+                                    qsa.get(accionElegida)
+                                            + factorAprendizaje
+                                            * (puntuacion
+                                            + factorRecuerdo*(auxFloat - qsa.get(accionElegida))
                                     )
-                        );
+                            );
 
-                        /*puntuacion = 0.0f;
-                        for(String act : listaAccionesAnteriores){
-                            puntuacion += qsa.get(estadoAnterior+"-"+act);
                         }
-                        for(String act : listaAccionesAnteriores){
-                            qsa.put(estadoAnterior+"-"+act,  qsa.get(estadoAnterior+"-"+act) * escalaValores/puntuacion );
-                        }*/
 
-
-
-                        //===============
-                    }else{
-                        estadoAnteriorAct = "";
-                        estadoAnterior = "";
-                        accionAnterior = -1;
-                        listaAccionesAnteriores = new ArrayList<>();
                     }
-                    
+                    //System.out.println("final por -> "+estadoMensaje);
+
+                }else{
+                    System.out.println("Error -> "+estadoMensaje);
                 }
-                
             }
-            try (FileWriter writer = new FileWriter("tetrisJava/ficherosEntrenados/episiodio"+ii+".txt")) {
-                for (String o : qsa.keySet()) {
-                    if(o != ""){
-                        writer.write(o+"="+qsa.get(o)+"\n");
-                    }
-                    
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
+            guardarResultados( anchoTablero , altoTablero , j.getNombrePieza().size() );
+
         }
         
-        j.dibujar();
+        //j.dibujar();   aqui
         
 
         System.out.println("=============================== Ahora vamos a intentar jugar ===============================");
-        
-        
-        textoDeEstado = j.iniciarDesdeEstadoCubo("0000");
-                //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
-                j.configurarLimites(true, 50, 5, 4); 
-                //Se hace al principio para arrancar
-                splitearAccionesCubo(textoDeEstado);
-                addNuevasAcciones();
-                while(textoDeEstado != "final"){
-                    j.dibujar();
 
-                    valorMaximoAccion = -100;
-                    numeroAccionesPuntuadas = 0;
-                    maximaAcciones = 0;
-                    lsNoVisitidos = new ArrayList<>();
-                    
-                    for(String k : acciones){
-                        auxFloat = qsa.get(estadoActual+"-"+k);
-                        if(auxFloat != 0){
-                            numeroAccionesPuntuadas ++;
-                            
-                        }else{
-                            lsNoVisitidos.add(k);
-                        }
-                        if (valorMaximoAccion < auxFloat) {
-                            valorMaximoAccion = auxFloat;
-                            maximaAcciones = Integer.valueOf(k);
-                        }
-                        
-                    }
+        int numeroDePaso = 0;
+
+        estadoMensaje = j.iniciarDesdePieza("000000",
+                j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size()))
+
+        );
+        //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
+        j.configurarLimites(true, 50, 15, 12);
+        //Se hace al principio para arrancar
+
+        //splitearAccionesCubo(textoDeEstado);
+        //addNuevasAcciones();
+
+        while(estadoMensaje.equals("Correcto")){
+
+            estadoAnterior = j.devolverEstadoClase();
+            j.dibujar();
+
+            valorMaximoAccion = -100;
+            maximaAcciones = 0;
+            lsNoVisitidos = new ArrayList<>();
+
+            for(int k = 0 ; k  < estadoAnterior.accionPosicion().size() ; k++){
+                auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f);
 
 
-                    proximaAccion = maximaAcciones;
-                    System.out.println("avance");
-
-                    textoDeEstado = j.realizarMovimiento(proximaAccion, 0);
-                    if(textoDeEstado != "final") splitearAccionesCubo(textoDeEstado);
-                    //addNuevasAcciones();
-
-
-
+                lsNoVisitidos.add(k);
+                if (valorMaximoAccion < auxFloat) {
+                    valorMaximoAccion = auxFloat;
+                    maximaAcciones = k;
                 }
-                System.out.println("============= fin del juego =============");
+
+            }
+
+            proximaAccionX = estadoAnterior.accionPosicion().get( maximaAcciones );
+            proximaAccionGiro = estadoAnterior.accionGiro().get( maximaAcciones );
+
+            System.out.println("avance");
+            numeroDePaso += 1;
+
+            estadoMensaje = j.realizarMovimientoDevClase( proximaAccionX , proximaAccionGiro , -2 );
+
+            //addNuevasAcciones();
+
+
+
+        }
+        System.out.println("============= fin del juego =============");
+        System.out.println(estadoMensaje +" numero de iteraciones -> "+numeroDePaso);
         
         //System.out.println(textoDeEstado);
         //splitearAccionesCubo(textoDeEstado);
@@ -280,30 +223,233 @@ public class refuerzo {
         //System.out.println(texto);
     }
 
-    private void addNuevasAcciones(){
-        for (String i : acciones) {
-            if (!qsa.containsKey(estadoActual+"-"+i)) {
-                qsa.put(estadoActual+"-"+i, 0.0f);
+    private Integer jugarUna(juego j , boolean dibujar , int iterMax , int altMax , int medAltMax , String estado){
+        int numeroDePaso = 0;
+        String estadoMensaje;
+        Estado estadoAnterior;
+
+        estadoMensaje = j.iniciarDesdePieza(estado,
+                j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size()))
+
+        );
+        j.configurarLimites(true, iterMax, altMax, medAltMax);
+
+        while(estadoMensaje.equals("Correcto")){
+            estadoAnterior = j.devolverEstadoClase();
+            if(dibujar) {
+                j.dibujar();
+            }
+            float valorMaximoAccion = -100;
+            int maximaAcciones = 0;
+            float auxFloat;
+            //List<Integer> lsNoVisitidos = new ArrayList<>();
+
+            for(int k = 0 ; k  < estadoAnterior.accionPosicion().size() ; k++){
+                auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f);
+
+
+                //lsNoVisitidos.add(k);
+                if (valorMaximoAccion < auxFloat) {
+                    valorMaximoAccion = auxFloat;
+                    maximaAcciones = k;
+                }
+
+            }
+
+
+            //proximaAccionX = estadoAnterior.accionPosicion().get( maximaAcciones );
+            //proximaAccionGiro = estadoAnterior.accionGiro().get( maximaAcciones );
+
+            numeroDePaso += 1;
+
+            estadoMensaje = j.realizarMovimientoDevClase(
+                    //proximaAccionX
+                    estadoAnterior.accionPosicion().get( maximaAcciones ),
+                    //proximaAccionGiro
+                    estadoAnterior.accionGiro().get( maximaAcciones ), -2 );
+
+
+
+        }
+
+        return numeroDePaso;
+    }
+    private parEstado inicarJuego(juego j){
+
+        String res = "";
+        String estadoMensaje;
+        Estado estado = null;
+        int elegido = random.nextInt( j.getNombrePieza().size() );
+        estadoMensaje = j.iniciarDesdePieza(
+                "000000",
+                j.getNombrePieza().get(elegido)
+        );
+        if(estadoMensaje.equals("Correcto")){
+            //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
+            j.configurarLimites(true, 50, 15, 12);
+            //Se hace al principio para arrancar
+            //splitearAccionesCubo(textoDeEstado);
+            estado = j.devolverEstadoClase();
+            addNuevoEventos(estado); //Es obligatorio despues de realizar un juego
+            res = estadoMensaje;
+        }else{
+            res = "Problema al iniciar";
+        }
+        return new parEstado(res,estado);
+
+    }
+
+    private resultadoMovimiento siguienteEstado( juego j, Estado estado ){
+        int proximaAccionX , proximaAccionGiro;
+        float valorMaximoAccion = -100;
+        int maximaAcciones = 0;
+        //List<Integer> lsNoVisitidos = new ArrayList<>();
+        float auxFloat;
+        Estado estadoAnterior = null;
+        Estado estadoActual = null;
+        String accionElegida;
+        String resultado;
+
+        for( int k = 0 ; k < estado.accionPosicion().size();k++ ){
+            auxFloat = qsa.get( crearEtiquetaEstado( estado , k ) );
+
+            //lsNoVisitidos.add(k);
+            if (valorMaximoAccion < auxFloat) {
+                valorMaximoAccion = auxFloat;
+                maximaAcciones = k;
+            }
+        }
+
+        //======
+        auxFloat = 0.7f; //(float) ( - ( numeroAccionesPuntuadas/acciones.size() - 1)*0.9 + 0.1);
+
+        aletarioInt = random.nextInt( estado.accionPosicion().size() );
+        aleatorio = random.nextFloat();
+
+        //Continuar programando Linea 107
+
+        if (aleatorio < auxFloat) {
+            proximaAccionX = estado.accionPosicion().get(aletarioInt);
+            proximaAccionGiro = estado.accionGiro().get(aletarioInt);
+
+
+            //System.out.println("Exploracion");
+        }else{
+            proximaAccionX = estado.accionPosicion().get(maximaAcciones);
+            proximaAccionGiro = estado.accionGiro().get(maximaAcciones);
+            //System.out.println("avance");
+        }
+
+        estadoAnterior = estado;
+        accionElegida = estadoAnterior.pieza()+"/"+ //este si se queda porque depende de proximo
+                estadoAnterior.alturas()+"A"+
+                proximaAccionX+"-"+proximaAccionGiro;
+
+
+        /*
+         * Aqui realizamos el moviemiento
+         */
+        //System.out.println( estado.accionPosicion() );
+        //System.out.println( estado.accionGiro());
+        resultado = j.realizarMovimientoDevClase(proximaAccionX, proximaAccionGiro , -2);
+
+        if( resultado.equals("Correcto") ){
+            estadoActual = j.devolverEstadoClase();
+        }
+
+        return new resultadoMovimiento( resultado , estadoAnterior , estadoActual , accionElegida);
+
+
+    }
+
+    private List<String> addNuevoEventos(Estado entrada){
+        /*
+        Si nunca se ha explorado una accion se añade
+        Tambien devolvemos una lista de los estados + siguinetes acciones para optimizar el bucle for
+         */
+        List<String> res = new ArrayList<>();
+        for(int i = 0 ; i < entrada.accionPosicion().size();i++){
+            res.add( crearEtiquetaEstado(entrada , i) );
+            if(!qsa.containsKey( crearEtiquetaEstado(entrada , i) )
+            ){
+                qsa.put( crearEtiquetaEstado(entrada,i) ,
+                        0.0f);
+            }
+        }
+        return res;
+    }
+
+    private String crearEtiquetaEstado(Estado estado , int n){
+        return  estado.pieza()+"/"+estado.alturas()+"A"+estado.accionPosicion().get(n)+"-"+estado.accionGiro().get(n);
+    }
+
+    private float calcularPuntucaion( Estado estadoSiguiente ){
+        float puntuacion = 0.0f;
+
+        for(int k = 0 ; k < estadoSiguiente.alturas().size(); k++){
+            puntuacion += estadoSiguiente.alturas().get(k);
+        }
+
+
+        //puntuacion = (puntuacion/estadoActual.length()-minimaAltura);
+        //Pareze que eleve al 4 la diferencia
+        puntuacion = ( altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero
+                - puntuacion * puntuacion * puntuacion * puntuacion)
+                / (altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero );
+        return puntuacion;
+    }
+
+    private void guardarResultados(int anchura , int altura , int numeroPiezas){
+        String[] piezaSet;
+        for( int i = 0 ; i < numeroPiezas ; i++){
+            try{
+                BufferedWriter bw = new BufferedWriter(
+                        new FileWriter( "tetrisJava/ficherosEntrenados/"+i+"_"+anchura+"_"+altura+".txt" )
+                );
+                for( String j : qsa.keySet() ){
+                    piezaSet = j.split("/");
+                    if( Integer.parseInt(piezaSet[0]) == i ){
+                        bw.write( j+"="+qsa.get(j) );
+                        bw.newLine();
+                    }
+                }
+
+                bw.close(); // Cierra el archivo
+                //System.out.println("Archivo escrito correctamente.");
+
+            }catch (IOException e) {
+                System.out.println("Error escribir el fichero");
             }
         }
     }
 
-    private void splitearAccionesCubo(String t){
-        String estadoObjeto;
-        String accioneString;
-        String[] aux;
-        aux = t.split("a");
-        estadoObjeto = aux[0];
-        accioneString = aux[1];
-        aux = estadoObjeto.split("-");
-        estadoActual = aux[0];
-        acciones = new ArrayList<>();
-        
-        for(String i : accioneString.split("-")){
-            aux = i.split("/");
-            if(aux[1].equals("0")){
-                acciones.add(aux[0]);
+    public void leerResultados(int anchura , int altura , int numeroPiezas){
+        String linea;
+        String[] separacion;
+        File fichero;
+        for(int i = 0; i <numeroPiezas ; i++){
+            fichero = new File("tetrisJava/ficherosEntrenados/"+i+"_"+anchura+"_"+altura+".txt");
+            if(fichero.exists()){
+                System.out.println("leer -> "+ "tetrisJava/ficherosEntrenados/"+i+"_"+anchura+"_"+altura+".txt");
+                try(BufferedReader reader = new BufferedReader(new FileReader("tetrisJava/ficherosEntrenados/"+i+"_"+anchura+"_"+altura+".txt"))){
+                    while ( (linea = reader.readLine()) != null ){
+                        separacion = linea.split("=");
+                        qsa.put( separacion[0] , Float.parseFloat(separacion[1]) );
+                        //System.out.println(linea);
+                    }
+                }catch (IOException e){
+                    System.out.println("Error leer fichero");
+                }
             }
+
         }
+        //System.out.println(qsa.toString());
     }
+
+    private record parEstado(String mensaje , Estado estado){}
+
+    private record resultadoMovimiento(String mensaje , Estado estadoAnterior , Estado estadoActual, String movimientoElegido){}
+
 }
+
+

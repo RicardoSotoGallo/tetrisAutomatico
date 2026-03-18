@@ -8,7 +8,6 @@ public class calcularGrafoVirtual {
     //usamos stack o pilas para las nodos
     public static void main(String[] args) throws Exception {
         datosEstado d = new datosEstado();
-        //d.path = "ficherosComunos/estadoJuegoDic1.richi";
         d.leerFichero();
         d.enseñar();
         List<String> accion = calcularGrafoLista(d);
@@ -34,17 +33,7 @@ public class calcularGrafoVirtual {
                 mejor = datos.posiblesHuecos.get(i);
                 mejorHue = mejor.heuristica;
             }
-            /*if(tamañoPieza > datos.posiblesHuecos.size()){
-                break;
-            }else{
-                sumaAux = 0;
-                for(int j = i ; j < tamañoPieza; j++){
-                    sumaAux +=  datos.posiblesHuecos.get(j).valor;
-                }
-                if(sumaAux < mejorHue){
-                    break;
-                }
-            }*/
+
             
         }
         //System.out.println("mejor es -> "+mejor);
