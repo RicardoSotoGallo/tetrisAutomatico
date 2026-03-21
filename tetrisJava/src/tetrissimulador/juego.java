@@ -57,9 +57,10 @@ public class juego {
             1 -> "2-0a2-1a2-2a2-3"
             2 -> "0-2a1-2a2-2a3-2"
             3 -> "1-0a1-1a1-2a1-3"
-         */
 
-        /*piezas.put("punto",
+        */
+        /*
+        piezas.put("punto",
             new pieza(
                 "0-0",
                 "0-0",
@@ -81,7 +82,6 @@ public class juego {
 
         //System.out.println(piezas.get("palo"));
 
-        /*
         piezas.put("eleInv",
             new pieza(
                 "0-0a0-1a1-1a2-1",
@@ -94,10 +94,8 @@ public class juego {
 
         nombrePieza.add("eleInv");
 
-         */
 
 
-        /*
         piezas.put("ele", 
             new pieza(
                 "0-1a1-1a2-1a2-0",
@@ -107,7 +105,6 @@ public class juego {
         );
         nombrePieza.add("ele");
 
-         */
 
         piezas.put("cuadrado", 
             new pieza(
@@ -120,7 +117,6 @@ public class juego {
         nombrePieza.add("cuadrado");
 
 
-        /*
         piezas.put("gusano", 
             new pieza(
             "0-1a1-1a1-0a2-0",
@@ -131,8 +127,7 @@ public class juego {
         );
         nombrePieza.add("gusano");
 
-         */
-        /*
+
         piezas.put("te", 
             new pieza(
                 "0-1a1-1a1-0a2-1",
@@ -143,9 +138,7 @@ public class juego {
         );
         nombrePieza.add("te");
 
-         */
 
-        /*
         piezas.put("gusanoInv",
             new pieza(
             "0-0a1-0a1-1a2-1",
@@ -156,7 +149,7 @@ public class juego {
         );
         nombrePieza.add("gusanoInv");
 
-         */
+
 
 
     }
@@ -271,7 +264,7 @@ public class juego {
     
     public String realizarMovimiento(Integer posicion , Integer giro){
         /*
-        EL OBJETIVO ES ELIMIANR ESTA FUNCION
+        EL OBJETIVO ES ELIMIANR ESTA FUNCION NO USAR
         Genera el siguiente estado o juego un estado
         Para ello se le introduce un giro y una pasicion
          */
@@ -302,7 +295,6 @@ public class juego {
         return res;
 
     }
-
 
     public String realizarMovimientoDevClase(Integer posicion , Integer giro , int siguientePieza){
         /*
@@ -555,6 +547,37 @@ public class juego {
                 );
 
     }
+
+    public Estado2 devolverEstado2Clase(){
+
+        /*
+        Devuelve el estado actual del juego y la pieza y giro actual
+         */
+        Integer maximo;
+        Integer minimo;
+        List<Integer> accionesAux = new ArrayList<>();
+        List<Integer> girosAux = new ArrayList<>();
+        for(int giro = 0; giro < 4;giro ++){
+            maximo = piezas.get(nombrePieza.get(piezaActual)).devolverMaximo(giro);
+            minimo = piezas.get(nombrePieza.get(piezaActual)).devolverMin(giro);
+            for(int xx = 0 ; xx < ancho ; xx++){
+                if(xx + minimo >= 0 && xx+maximo < ancho){
+                    accionesAux.add(xx);
+                    girosAux.add(giro);
+                }
+            }
+        }
+
+
+        return new Estado2(devolverAlturas() ,
+                piezaActual , giroActual ,
+                accionesAux , girosAux,
+                tablero,
+                piezas.get(nombrePieza.get(piezaActual) )
+        );
+
+    }
+
     public List<String> getNombrePieza(){
         return new ArrayList<>(nombrePieza);
     }

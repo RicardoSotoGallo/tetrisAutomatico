@@ -1,6 +1,10 @@
 package calculoHeuristicaTetris;
 
+import tetrissimulador.Estado2;
+import tetrissimulador.vector2D;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class CalcularHeuristicaSingular {
@@ -12,98 +16,89 @@ public class CalcularHeuristicaSingular {
     Integer posicion;
     Integer angulo;
 
-    /*
-        Otro que hay que hacerle un rework pero este es mas facil
-     */
+    public static GiroPuntuacionPosicion calcularHeuristica(Estado2 estado, vector2D hueco , HashMap<vector2D,Integer> puntuacionCasilla){
 
-    public CalcularHeuristicaSingular(String tipo , Integer x , Integer y){
-         // -- esto se quedaria igual pero bueno para alante --
-        this.tipo = tipo;
-        valor = 0;
-        this.x = x;
-        this.y = y;
-        heuristica = 0;
-    }
 
-    public void calcularHeuristica(){
-        // -- aqui para cada giro se calcula la posicion --
+        GiroPuntuacionPosicion mejorPuntuacion = new GiroPuntuacionPosicion( -1 , -1 ,-10);
+        GiroPuntuacionPosicion puntuacionAux;
 
-        //datosEstado datos , boolean  enseñar
-        /*
-        boolean seHaCambiado;
-        seHaCambiado = calcularUnaPosicion(datos, datos.zeroGrados , enseñar);
-        if(seHaCambiado) angulo = 0;
-        seHaCambiado = calcularUnaPosicion(datos, datos.piMedioGrado , enseñar);
-        if(seHaCambiado) angulo = 1;
-        seHaCambiado = calcularUnaPosicion(datos, datos.piGrado , enseñar);
-        if(seHaCambiado) angulo = 2;
-        seHaCambiado = calcularUnaPosicion(datos, datos.menoPiMedioGrado , enseñar);
-        if(seHaCambiado) angulo = 3;
-        //System.out.println("====================");
-        //System.out.println("Resultado -> \nheuristica-> "+heuristica+"\nposicionX-> "+posicion+"\ngiro-> "+angulo);
-        */
+        puntuacionAux = calcularUnaPosicion(estado , 0 , hueco ,puntuacionCasilla);
+        if(puntuacionAux.puntuacion() > mejorPuntuacion.puntuacion() && puntuacionAux.puntuacion() >= 0){
+            mejorPuntuacion = new GiroPuntuacionPosicion(0 ,puntuacionAux.posicion(),puntuacionAux.puntuacion() );
+        }
+        puntuacionAux = calcularUnaPosicion(estado , 1 , hueco ,puntuacionCasilla);
+        if(puntuacionAux.puntuacion() > mejorPuntuacion.puntuacion() && puntuacionAux.puntuacion() >= 0){
+            mejorPuntuacion = new GiroPuntuacionPosicion(1 ,puntuacionAux.posicion(),puntuacionAux.puntuacion() );
+        }
+        puntuacionAux = calcularUnaPosicion(estado , 2 , hueco ,puntuacionCasilla);
+        if(puntuacionAux.puntuacion() > mejorPuntuacion.puntuacion() && puntuacionAux.puntuacion() >= 0){
+            mejorPuntuacion = new GiroPuntuacionPosicion(2 ,puntuacionAux.posicion(),puntuacionAux.puntuacion() );
+        }
+        puntuacionAux = calcularUnaPosicion(estado , 3 , hueco ,puntuacionCasilla);
+        if(puntuacionAux.puntuacion() > mejorPuntuacion.puntuacion() && puntuacionAux.puntuacion() >= 0){
+            mejorPuntuacion = new GiroPuntuacionPosicion(3 ,puntuacionAux.posicion(),puntuacionAux.puntuacion() );
+        }
+
+        return mejorPuntuacion;
+
     }
     
-    private boolean calcularUnaPosicion(){
+    private static GiroPuntuacionPosicion calcularUnaPosicion(Estado2 estado2 , Integer giro , vector2D hueco , HashMap<vector2D,Integer> puntuacionCasilla){
         // -- aqui dado un hueco (eso ya esta dado)
         // -- dado un giro
         // -- se calcula una puntuacion y se devuelve
         // -- la mehor obcion es juntar todo_ pero bueno ya lo vere --
+        //Primer Recursivo
 
+        List<tetrissimulador.vector2D> piezaEspacio = new ArrayList<>(estado2.piezaActual().devolverPosiciones(giro));
 
-
-        //datosEstado datos , List<pareja> listaAMirar , boolean enseñar
-         /*
-        int maximo = listaAMirar.size();
-        boolean esPosible;
-        int valorParaUnaPieza;
-        pareja parejaInicial;
-        int mirarReal;
-        String posicionAuxHueco;
-        int valorAux;
-        boolean res = false;
-        for(int inicio = 0 ; inicio < maximo ; inicio ++){
-            esPosible = true;
-            valorParaUnaPieza = 0;
-            parejaInicial = listaAMirar.get(inicio);
-            for (int mirar = 0 ; mirar < maximo && esPosible ; mirar ++ ) {
-                mirarReal = (mirar + inicio)%maximo;
-                posicionAuxHueco = (this.x -(parejaInicial.getX() - listaAMirar.get(mirarReal).getX() ) )+","
-                                  +(this.y -(parejaInicial.getY() - listaAMirar.get(mirarReal).getY() ) );//mirar esto
-                if( datos.diccionarioCasilla.containsKey(posicionAuxHueco) ){
-                    valorAux = datos.diccionarioCasilla.get(posicionAuxHueco).valor;
-                    if(valorAux >= 0){
-                        valorParaUnaPieza += valorAux;
-                    }else{
-                        esPosible = false;
-                    }
-                }else{
-                    esPosible = false;
-                }
-                
-            }
-            if(enseñar){
-                System.out.println("========================");
-                System.out.println("valorParaUnaPieza->"+valorParaUnaPieza + 
-                "\n huecoAMirar-> "+this
-                +"\n inicio-> "+inicio
-                +"\n parejaInicio-> "+parejaInicial
-                +"\n listaAMirar-> "+listaAMirar
-                +"\n esPosible->"+esPosible);
-            }
-            if(esPosible){
-                if(heuristica < valorParaUnaPieza){
-                    heuristica = valorParaUnaPieza;
-                    res = true;
-                    posicion = this.x - parejaInicial.getX();
-                }
+        GiroPuntuacionPosicion calculo;
+        Integer calculoAux;
+        calculo = new GiroPuntuacionPosicion( 0, 0 , -1);
+        //System.out.println( "Pieza ->" + piezaEspacio +" \n hueco -> "+hueco  );
+        for(vector2D referencia : piezaEspacio){
+            calculoAux = calcularUnaPosicionRecursivo( piezaEspacio ,referencia , hueco , puntuacionCasilla , piezaEspacio.size() -1 );
+            if(calculo.puntuacion() < calculoAux){
+                calculo = new GiroPuntuacionPosicion(0, referencia.x(), calculoAux);
             }
         }
-            
-        return res;
 
-          */
-        return false;
+        //System.out.println("Resultado : "+calculo);
+
+
+        return calculo;
+
+    }
+
+    private static Integer calcularUnaPosicionRecursivo(List<tetrissimulador.vector2D> piezaEspacio, vector2D piezaRefrencia , vector2D hueco , HashMap<vector2D,Integer> puntuacionCasilla , Integer recursion){
+
+        Integer res = casillaPiezaTablero(piezaEspacio.get(recursion), piezaRefrencia , hueco , puntuacionCasilla);
+        Integer resAux;
+        //System.out.println(res);
+        if(res >= 0){
+            if(recursion != 0 ){
+                resAux =  calcularUnaPosicionRecursivo(piezaEspacio, piezaRefrencia , hueco , puntuacionCasilla , recursion - 1);
+                if(resAux >= 0){
+                    res = res + resAux;
+                }else{
+                    res = -1;
+                }
+
+            }
+        }
+
+
+        return res;
+    }
+
+    private static Integer casillaPiezaTablero(vector2D pieza , vector2D piezaReferncia , vector2D hueco , HashMap<vector2D,Integer> puntuacionCasilla){
+        Integer res = -2;
+        vector2D mirar = new vector2D( pieza.x() + hueco.x() - piezaReferncia.x(), pieza.y() + hueco.y() -piezaReferncia.y() );
+        if( puntuacionCasilla.containsKey( mirar  ) ){
+            res = puntuacionCasilla.get(mirar);
+        }
+
+        return res;
     }
     public List<String> obtenerAccion(){
         List<String> accion = new ArrayList<>();
