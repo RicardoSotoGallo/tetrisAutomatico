@@ -1,19 +1,25 @@
 package tetrissimulador;
 
+import java.util.HashMap;
 import java.util.List;
 
 public record Estado(
         List<Integer> alturas,
         Integer pieza , Integer giro,
         List<Integer> accionPosicion,
-        List<Integer> accionGiro) {
+        List<Integer> accionGiro ,
+        Integer huecos,
+        Integer huecosNuevos , Integer filasQuitadas) {
 
-    public Estado(List<Integer> alturas, Integer pieza, Integer giro, List<Integer> accionPosicion, List<Integer> accionGiro) {
+    public Estado(List<Integer> alturas, Integer pieza, Integer giro, List<Integer> accionPosicion, List<Integer> accionGiro ,Integer huecos , Integer huecosNuevos , Integer filasQuitadas) {
         this.alturas = alturas;
         this.pieza = pieza;
         this.giro = giro;
         this.accionPosicion = accionPosicion;
         this.accionGiro = accionGiro;
+        this.huecos = huecos;
+        this.huecosNuevos = huecosNuevos;
+        this.filasQuitadas = filasQuitadas;
 
     }
 
@@ -52,7 +58,11 @@ public record Estado(
         return res.toString();
     }
 
+
     public Estado copia(Integer p){
-        return new Estado( alturas , p, giro , accionPosicion ,accionGiro );
+        return new Estado( alturas , p, giro , accionPosicion ,accionGiro , huecos , huecosNuevos,filasQuitadas);
+    }
+    public void imprimirCambios(){
+        System.out.println( "Huecos Actuales = "+huecos+"\n huecos nuevos: "+huecosNuevos+" FilasQuitadas: "+filasQuitadas );
     }
 }

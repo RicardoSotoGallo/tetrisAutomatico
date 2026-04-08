@@ -22,6 +22,7 @@ public class gradiente {
             
         }
     }
+
     public static void main(String[] args) {
         List<List<Double>> valores = new ArrayList<>();
         List<Double> valoresValores = new ArrayList<>();
@@ -303,44 +304,4 @@ public class gradiente {
 
 
 
-
-
-    /*
-    public void entrenar(List<Double> entradas , List<Double> salida){
-        
-         * La idea es hacerlo por bach
-         
-        int longi = entradas.size();
-        double sup = 0;
-        double inf = 0;
-        double p;
-        double error;
-        double factorAprendizaje = 0.1;
-        for(int i = 0; i < longi; i++){
-            sup += entradas.get(i)*salida.get(i);
-            inf += salida.get(i);
-        }
-        media = sup/inf;
-        for(int i = 0; i < 20; i++){
-            for(int j = 0; j < longi; j++){
-                p = entradas.get(j) - media;
-                error = Math.abs(gaus(p) - salida.get(j));
-                error = error - 0.1;
-                desviacion = desviacion - error*desviacion;
-
-                
-
-            }
-        }
-        for(double k: entradas){
-            p = k- media;
-            System.out.println("entrada -> "+k+" salida -> "+gaus(p));
-        }
-    }
-    public double gaus(double  p){
-        return Math.exp( -Math.pow((p), 2)/desviacion );
-    }
-    public double DGous(double p){
-        return -(2*p/desviacion)*gaus(p);
-    }*/
 }

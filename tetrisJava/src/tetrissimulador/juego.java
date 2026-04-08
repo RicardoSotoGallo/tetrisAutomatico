@@ -24,6 +24,13 @@ public class juego {
     Integer piezaActual, giroActual,ejeXActual;
 
     /*
+        Variables para Heuristica
+    */
+    private Integer filasQuitadas = 0;
+    private Integer huecosActuales = 0;
+    private Integer huecosNuevos = 0;
+
+    /*
         Hay que crear una funcion que eliga una pieza al azar de las disponibles y
         Otra que automatice el juego ("Lo empezamos con posiciones y movimiento al azar")
      */
@@ -39,6 +46,10 @@ public class juego {
         iteracionesMaxima = -1; // numero de iteraciones maxima
         alturaMaxima = -1;      // numero de altura maxima antes de que termine
         mediaAlturaMaxima = -1; // numero de altura media maxima
+
+
+
+
 
         /*
         Iniciamos el tablero vacio
@@ -149,9 +160,6 @@ public class juego {
         );
         nombrePieza.add("gusanoInv");
 
-
-
-
     }
 
     public void configurarLimites(boolean hayF , Integer iterMax , Integer altMax , Integer medAltMax){
@@ -173,7 +181,7 @@ public class juego {
         configurarLimites(hayF, iterMax, -1, -1);
     }
 
-    public void iniciar(){
+    private void iniciar(){
         /*
         La idea es que inicia el juego
         Pero lo inicia controlando el juegdor manualmente por teclado
@@ -188,7 +196,7 @@ public class juego {
             abierto = leerTeclado(sc);
             borrarLlena();
             //dibujar();
-            
+
             //System.out.println(devolverEstadoClase().toString());
         }
 
@@ -262,7 +270,7 @@ public class juego {
 
     }
     
-    public String realizarMovimiento(Integer posicion , Integer giro){
+    private String realizarMovimiento(Integer posicion , Integer giro){
         /*
         EL OBJETIVO ES ELIMIANR ESTA FUNCION NO USAR
         Genera el siguiente estado o juego un estado
@@ -302,12 +310,21 @@ public class juego {
         Para ello se le introduce un giro y una pasicion
          */
         Random azar = new Random();
+        //Entre aqui
+        this.huecosNuevos = huecosActuales;
+
         contarIteraciones += 1;
         giroActual = giro;
         ejeXActual = -posicion;
 
         bajarPieza();
-        borrarLlena();
+        filasQuitadas = borrarLlena();
+
+        huecosActuales = this.contarHuecos();
+        huecosNuevos = huecosActuales - huecosNuevos;
+        if(huecosNuevos < 0) huecosNuevos = 0;
+
+        //Asta aqui hay que contar la diferencia
         String res = "Correcto";
         //dibujar();
         if (hayFinal) {
@@ -458,10 +475,11 @@ public class juego {
         return res;
     }
 
-    private void borrarLlena(){
+    private Integer borrarLlena(){
         /*
         Borra las filas ya completadas
          */
+        int filasQuitadas = 0;
         boolean llena;
         HashMap<vector2D,Character> tableroAux;
         vector2D v,v2;
@@ -474,6 +492,7 @@ public class juego {
                 }
             }
             if(llena){
+                filasQuitadas += ancho;
                 tableroAux = new HashMap<>(tablero);
                 for(int yi = yy ; yi >= 1 ; yi--){
                     for(int xi = 0 ; xi < ancho ; xi++){
@@ -489,6 +508,7 @@ public class juego {
             }
 
         }
+        return filasQuitadas;
     }
 
     public String devolverEstado(){
@@ -519,9 +539,7 @@ public class juego {
         return res.substring(0,res.length()-1);
     }
 
-
     public Estado devolverEstadoClase(){
-
         /*
         Devuelve el estado actual del juego y la pieza y giro actual
          */
@@ -532,7 +550,7 @@ public class juego {
         for(int giro = 0; giro < 4;giro ++){
             maximo = piezas.get(nombrePieza.get(piezaActual)).devolverMaximo(giro);
             minimo = piezas.get(nombrePieza.get(piezaActual)).devolverMin(giro);
-            for(int xx = 0 ; xx < ancho ; xx++){
+            for(int xx = -minimo ; xx < ancho ; xx++){
                 if(xx + minimo >= 0 && xx+maximo < ancho){
                     accionesAux.add(xx);
                     girosAux.add(giro);
@@ -543,7 +561,9 @@ public class juego {
 
         return new Estado(devolverAlturas() ,
                 piezaActual , giroActual ,
-                accionesAux , girosAux
+                accionesAux , girosAux,
+                this.huecosActuales,
+                this.huecosNuevos , this.filasQuitadas
                 );
 
     }
@@ -580,5 +600,21 @@ public class juego {
 
     public List<String> getNombrePieza(){
         return new ArrayList<>(nombrePieza);
+    }
+
+    public Integer contarHuecos(){
+        //esto se pasa al juego No lo quiero aqui y se mete como variable
+        Integer res = 0;
+        int alturaMax;
+        int x = 0;
+        for(int altu : this.devolverAlturas()){
+            alturaMax = alto - altu;
+            for( int y = alturaMax ; y < alto  ; y++){
+                if(tablero.get(new vector2D(x,y)).equals('n')) res++;
+                //System.out.println( tablero.get(new vector2D(x,y)) );
+            }
+            x++;
+        }
+        return res;
     }
 }

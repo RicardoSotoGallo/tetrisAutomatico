@@ -34,10 +34,11 @@ public class refuerzo {
     -> entrenar hay que reacerlo
     -> crear una funcion para entrenar independiente de la entrada
      */
-    public void entrenar(boolean reentrenar , int anchura , int altura  , int etapas , int numeroJuegos, Integer piezaEleguida){
+    public SalidaRefuerzo entrenar(boolean reentrenar , int anchura , int altura  , int etapas , int numeroJuegos, Integer piezaEleguida,
+                                   float factorAprendizaje, float factorRecuerdo,
+                                   boolean juegarAlFinal){
         anchoTablero = anchura;
         altoTablero = altura;
-        float factorAprendizaje = 0.2f, factorRecuerdo = 0.5f;
         Integer proximaAccionX ,proximaAccionGiro;
         float auxFloat,auxFloat2;
         Integer maximaAcciones;
@@ -53,6 +54,8 @@ public class refuerzo {
         resultadoMovimiento resultadoMovimiento = null;
         Integer iteracionesMedios = 0;
 
+        SalidaRefuerzo res = new SalidaRefuerzo(factorAprendizaje,factorRecuerdo,numeroJuegos);
+
         if( !reentrenar ) leerResultados(anchoTablero , altoTablero , 7);
 
         for(int ii = 0 ; ii < etapas; ii++){
@@ -62,6 +65,7 @@ public class refuerzo {
             for( int juegosTest = 0 ; juegosTest < 10 ; juegosTest++ ){
                 iteracionesMedios += jugarUna( j , false , 50, 15, 12 , "000000" , piezaEleguida);
             }
+            res.addListaIteracion((float) iteracionesMedios / 10);
             System.out.println( "E/J -> "+ii+" sobre "+etapas +" iteraciones -> "+(float) iteracionesMedios / 10);
             if( iteracionesMedios/10 == 50.0 ){
                 break;
@@ -138,65 +142,67 @@ public class refuerzo {
         
         //j.dibujar();   aqui
         
+        if(juegarAlFinal){
 
-        System.out.println("=============================== Ahora vamos a intentar jugar ===============================");
+            System.out.println("=============================== Ahora vamos a intentar jugar ===============================");
 
-        int numeroDePaso = 0;
+            int numeroDePaso = 0;
 
-        if(piezaEleguida >= 0){
-            estadoMensaje = j.iniciarDesdePieza("000000",
-                    j.getNombrePieza().get(piezaEleguida));
-        }
-        else{
-            estadoMensaje = j.iniciarDesdePieza("000000",
-                    j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size())));
-        }
-
-
-        //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
-        j.configurarLimites(true, 50, altoTablero - 3, altoTablero - 5);
-        //Se hace al principio para arrancar
-
-        //splitearAccionesCubo(textoDeEstado);
-        //addNuevasAcciones();
-
-        while(estadoMensaje.equals("Correcto")){
-
-            estadoAnterior = j.devolverEstadoClase();
-            j.dibujar();
-
-            valorMaximoAccion = -100;
-            maximaAcciones = 0;
-            lsNoVisitidos = new ArrayList<>();
-
-            for(int k = 0 ; k  < estadoAnterior.accionPosicion().size() ; k++){
-                auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f);
-
-
-                lsNoVisitidos.add(k);
-                if (valorMaximoAccion < auxFloat) {
-                    valorMaximoAccion = auxFloat;
-                    maximaAcciones = k;
-                }
-
+            if(piezaEleguida >= 0){
+                estadoMensaje = j.iniciarDesdePieza("000000",
+                        j.getNombrePieza().get(piezaEleguida));
+            }
+            else{
+                estadoMensaje = j.iniciarDesdePieza("000000",
+                        j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size())));
             }
 
-            proximaAccionX = estadoAnterior.accionPosicion().get( maximaAcciones );
-            proximaAccionGiro = estadoAnterior.accionGiro().get( maximaAcciones );
 
-            System.out.println("avance");
-            numeroDePaso += 1;
+            //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
+            j.configurarLimites(true, 50, altoTablero - 3, altoTablero - 5);
+            //Se hace al principio para arrancar
 
-            estadoMensaje = j.realizarMovimientoDevClase( proximaAccionX , proximaAccionGiro , piezaEleguida );
-
+            //splitearAccionesCubo(textoDeEstado);
             //addNuevasAcciones();
 
+            while(estadoMensaje.equals("Correcto")) {
+
+                estadoAnterior = j.devolverEstadoClase();
+                j.dibujar();
+
+                valorMaximoAccion = -100;
+                maximaAcciones = 0;
+                lsNoVisitidos = new ArrayList<>();
+
+                for (int k = 0; k < estadoAnterior.accionPosicion().size(); k++) {
+                    auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f);
 
 
+                    lsNoVisitidos.add(k);
+                    if (valorMaximoAccion < auxFloat) {
+                        valorMaximoAccion = auxFloat;
+                        maximaAcciones = k;
+                    }
+
+                }
+
+                proximaAccionX = estadoAnterior.accionPosicion().get(maximaAcciones);
+                proximaAccionGiro = estadoAnterior.accionGiro().get(maximaAcciones);
+
+                System.out.println("avance");
+                numeroDePaso += 1;
+
+                estadoMensaje = j.realizarMovimientoDevClase(proximaAccionX, proximaAccionGiro, piezaEleguida);
+
+                //addNuevasAcciones();
+            }
+
+
+
+            System.out.println("============= fin del juego =============");
+            System.out.println(estadoMensaje +" numero de iteraciones -> "+numeroDePaso);
         }
-        System.out.println("============= fin del juego =============");
-        System.out.println(estadoMensaje +" numero de iteraciones -> "+numeroDePaso);
-
+        return res;
     }
 
     private Integer jugarUna(juego j , boolean dibujar , int iterMax , int altMax , int medAltMax , String estado , Integer piezaEleguida){
@@ -253,6 +259,7 @@ public class refuerzo {
 
         return numeroDePaso;
     }
+
     private parEstado inicarJuego(juego j , Integer piezaEleguida){
 
         String res = "";
@@ -279,6 +286,7 @@ public class refuerzo {
         return new parEstado(res,estado);
 
     }
+
     private resultadoMovimiento siguienteEstado( juego j, Estado estado , Integer piezaElegida){
         int proximaAccionX , proximaAccionGiro;
         float valorMaximoAccion = -100;
@@ -369,12 +377,17 @@ public class refuerzo {
             puntuacion += estadoSiguiente.alturas().get(k);
         }
 
-
         //puntuacion = (puntuacion/estadoActual.length()-minimaAltura);
         //Pareze que eleve al 4 la diferencia
-        puntuacion = ( altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero
-                - puntuacion * puntuacion * puntuacion * puntuacion)
-                / (altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero * altoTablero*anchoTablero );
+        puntuacion = ( altoTablero*anchoTablero
+                - puntuacion - estadoSiguiente.huecos()*3 )
+                / (altoTablero*anchoTablero );
+
+        //Ahora hay que realizar una cosa muy bonita
+        // Si se genera un hueco nuevo se le castiga con ( - numero de huecos )
+        // Si se borra una linea se le premia con        ( + el numero de fila quitadas )
+        puntuacion += estadoSiguiente.filasQuitadas() - estadoSiguiente.huecosNuevos()*estadoSiguiente.alturas().size();
+
         return puntuacion;
     }
 
