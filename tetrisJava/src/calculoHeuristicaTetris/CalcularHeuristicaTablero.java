@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 /*
 Vamos a explicar lo que hay que hacer
@@ -22,7 +23,12 @@ public class CalcularHeuristicaTablero {
     private Integer altura,anchura;
     private HashMap<vector2D,Integer> puntuacionCasilla;
     private List<vector2D> posiblesHuecos;
-    public CalcularHeuristicaTablero(Integer altura , Integer anchura){
+    public resultadoHeuristica resultadoFinal;
+
+
+    public CalcularHeuristicaTablero(Integer altura , Integer anchura ,
+                                     Integer iteracionesMaximas, Integer alturaMaxima, Integer alturaMedia,
+                                     Boolean visualizacion, Integer piezaEleguida){
         // -- Esta funcion tiene que sustituir a la anterior.
         // -- Una vez iniciada se incia el juego y se puntua
         // Se escoje la mejorAccion() y se juega
@@ -32,51 +38,83 @@ public class CalcularHeuristicaTablero {
         game = new juego(altura , anchura);
         this.altura = altura;
         this.anchura = anchura;
-        game.configurarLimites(true , 30 , 9 , 9);
-        resultado = game.iniciarDesdePieza("00000","eleInv");
-        System.out.println(resultado);
+        game.configurarLimites(true , iteracionesMaximas , alturaMaxima , alturaMedia);
+        game.getNombrePieza().size();
+        Random random = new Random();
+        String elementoAleatorio = "";
+        String tipoDePartida = "";
+        if(piezaEleguida < 0){
+            elementoAleatorio = game.getNombrePieza().get( random.nextInt(game.getNombrePieza().size())  );
+            tipoDePartida = "Pieza_Azar";
+        }else{
+            elementoAleatorio = game.getNombrePieza().get(piezaEleguida);
+            tipoDePartida = game.getNombrePieza().get(piezaEleguida);
+        }
+        resultado = game.iniciarDesdePieza("000000",elementoAleatorio);
+        //System.out.println(resultado);
         GiroPuntuacionPosicion mejorAccionVariable;
+        resultadoFinal = new resultadoHeuristica(tipoDePartida);
+        long inicio, fin,duracion;
+        Integer numeroPieza;
+        inicio = System.nanoTime();
+        fin = System.nanoTime();
+        duracion = fin - inicio;
         while (resultado.equals("Correcto") ){
-            game.dibujar();
+            if(visualizacion) game.dibujar();
+            /*Este es el proceso*/
+            inicio = System.nanoTime(); // 🔵 línea A
+
             estado = game.devolverEstado2Clase();
 
             calcularCasilla( estado );
 
-
             mejorAccionVariable = mejorAccion(estado , posiblesHuecos , puntuacionCasilla);
 
-            resultado = game.realizarMovimientoDevClase(mejorAccionVariable.posicion() , mejorAccionVariable.giro() , -1);
+            fin = System.nanoTime(); // 🔴 línea B
+            duracion = fin - inicio;
+            //System.out.println("Tiempo en nanosegundos: " + duracion);
+            //System.out.println("Tiempo en milisegundos: " + duracion / 1_000_000.0);
+            numeroPieza = estado.tablero().values().stream()
+                    .filter(c -> c.equals('o')).toList().size();
+            //System.out.println("pieza Ocupada-> "+ numeroPieza
+            //);
+            /*
+                Aqui es donde guardo datos
+             */
 
-            System.out.println(resultado);
+            resultadoFinal.addAccion(mejorAccionVariable.posicion() , mejorAccionVariable.giro(),
+                    game.getNombrePieza().get(estado.pieza()),
+                    numeroPieza,duracion / 1_000_000.0
+                    );
 
-            //System.out.println(mejorAccionVariable);
-            //System.out.println(estado.toString());
-            //System.out.println( posiblesHuecos );
-            pintarNum();
+
+            resultado = game.realizarMovimientoDevClase(
+                    mejorAccionVariable.posicion() ,
+                    mejorAccionVariable.giro() ,
+                    piezaEleguida);
+
         }
-        System.out.println(resultado);
-
-
+        resultadoFinal.setTipoFinal(resultado);
     }
 
     private void calcularCasilla(Estado2 estado){
-        HashMap<tetrissimulador.vector2D, Character> diccionarioCasilla = estado.tablero();
+        HashMap<vector2D, Character> diccionarioCasilla = estado.tablero();
         puntuacionCasilla = new HashMap<>();
         posiblesHuecos = new ArrayList<>();
         Integer valorAux,valorAux2;
         char casillaAux;
         Integer x,y;
-        tetrissimulador.vector2D vn , vm , vDw,vUp;
+        vector2D vn , vm , vDw,vUp;
 
-        for(tetrissimulador.vector2D i : diccionarioCasilla.keySet()){
+        for(vector2D i : diccionarioCasilla.keySet()){
             valorAux = 0;
             casillaAux = diccionarioCasilla.get(i);
             x = i.x();
             y = i.y();
-            vn = new tetrissimulador.vector2D(x - 1,y);
-            vm = new tetrissimulador.vector2D(x + 1,y);
-            vDw = new tetrissimulador.vector2D(x,y-1);
-            vUp = new tetrissimulador.vector2D(x,y+1);
+            vn = new vector2D(x - 1,y);
+            vm = new vector2D(x + 1,y);
+            vDw = new vector2D(x,y-1);
+            vUp = new vector2D(x,y+1);
             if(casillaAux == 'o'){
                 valorAux = -1;
             }

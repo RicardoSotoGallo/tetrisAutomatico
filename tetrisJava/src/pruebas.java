@@ -1,6 +1,8 @@
 
+import algoritmoAprendizajePorRefuerzo.ResultadosRefuerzo;
 import algoritmoAprendizajePorRefuerzo.SalidaRefuerzo;
 import algoritmoAprendizajePorRefuerzo.refuerzo;
+import calculoHeuristicaTetris.resultadoHeuristica;
 import tetrissimulador.Estado;
 import tetrissimulador.juego;
 
@@ -19,24 +21,44 @@ public class pruebas {
         SalidaRefuerzo res;
         int apreMax = 20;
         int recuerMax = 3;
+        Integer piezaElegida = 6;
+        Integer altura = 10;
+        Integer anchura = 6;
         List<SalidaRefuerzo> listaRes = new ArrayList<>();
-        for(int apren = 1 ; apren < apreMax ; apren++){
+
+        res = i.entrenar( true  , anchura , altura , 50,
+                5000 , piezaElegida,
+                0.85f , 0.4666667f,
+                true);
+
+        String tipo = "Refuerzo"+altura+"_"+anchura+"_"+piezaElegida;
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(
+                "tetrisJava/salidaTestFactores/"+tipo+".txt"
+        ))) {
+            writer.write( i.resultadosRefuerzoList.getFirst().titulo() );
+            for(ResultadosRefuerzo j : i.resultadosRefuerzoList){
+                writer.newLine();
+                writer.write(j.fila());
+            }
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        /*for(int apren = 1 ; apren < apreMax ; apren++){
             for(int recurd = 1; recurd < recuerMax ; recurd++){
                 float aprender = (float)apren/ apreMax;
                 float recuerdo = (float) recurd/recuerMax * 0.8f + 0.2f;
                 System.out.println("Empezamos -> FactorAprendizaje: "+aprender+" FactorRecuerdo: "+recuerdo);
 
-                res = i.entrenar( true  , 6 , 10 , 50,
-                        100 , -1,
-                        aprender , recuerdo,
-                        false);
+
 
                 listaRes.add(res);
 
 
             }
         }
-        escribirTodo(listaRes,"Datos2-2");
+        escribirTodo(listaRes,"Datos2-2");*/
 
 
 

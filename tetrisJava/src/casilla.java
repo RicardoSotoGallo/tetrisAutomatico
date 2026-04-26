@@ -1,4 +1,6 @@
 
+import LectorCapturas.pareja;
+
 import java.util.ArrayList;
 import java.util.List;
 

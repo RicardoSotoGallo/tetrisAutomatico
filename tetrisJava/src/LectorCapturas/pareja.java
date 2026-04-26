@@ -1,3 +1,7 @@
+package LectorCapturas;
+
+import java.util.Objects;
+
 public class pareja {
     private Integer x;
     private Integer y;
@@ -23,5 +27,17 @@ public class pareja {
     @Override
     public String toString(){
         return "["+x+","+y+"]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        pareja pareja = (pareja) o;
+        return Objects.equals(x, pareja.x) && Objects.equals(y, pareja.y);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
     }
 }

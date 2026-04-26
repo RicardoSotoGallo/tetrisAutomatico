@@ -1,3 +1,4 @@
+package LectorCapturas;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,7 @@ public class posiciones {
         }
         
     }
+
     public Integer getpixelX(int a){
         return x.get(a);
     }

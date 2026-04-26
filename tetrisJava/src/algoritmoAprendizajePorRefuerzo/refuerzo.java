@@ -20,6 +20,14 @@ public class refuerzo {
     private int aletarioInt;                                //Una variable aleatoria entera
     private Random random;                                  //La funcion rando
     private int anchoTablero,altoTablero;                   //Anchura y altura de tablero
+    private String estadoSalida = "";
+
+    List<Integer> movimientoLs;
+    List<Integer> girosLs;
+    List<Integer> numeroPiezas;
+    List<Double> tiempos;
+
+    public List<ResultadosRefuerzo> resultadosRefuerzoList;
 
     /*
      * La idea es primero se inicia el juego eliguiendo altura y anchura
@@ -39,9 +47,17 @@ public class refuerzo {
                                    boolean juegarAlFinal){
         anchoTablero = anchura;
         altoTablero = altura;
+        for(int i = 0; i < anchoTablero;i++) estadoSalida += "0";
+        resultadosRefuerzoList = new ArrayList<>();
+        ResultadosRefuerzo resultadoAux;
+
+        int numeroEntrenamiento = 0;
+
+
+
         Integer proximaAccionX ,proximaAccionGiro;
         float auxFloat,auxFloat2;
-        Integer maximaAcciones;
+        int maximaAcciones;
         float valorMaximoAccion;
         Estado estadoAnterior , estadoSiguiente = null;
         //List<String> listaAcciones;
@@ -62,16 +78,37 @@ public class refuerzo {
             random = new Random(); //iniciamos numero aleatorio
             j = new juego(altoTablero,anchoTablero); //iniciamos juego
             iteracionesMedios = 0;
+            movimientoLs = new ArrayList<>();
+            girosLs = new ArrayList<>();
+            numeroPiezas = new ArrayList<>();
+            tiempos = new ArrayList<>();
             for( int juegosTest = 0 ; juegosTest < 10 ; juegosTest++ ){
-                iteracionesMedios += jugarUna( j , false , 50, 15, 12 , "000000" , piezaEleguida);
+                                iteracionesMedios += jugarUna( j , false , 50, altoTablero - 2, altoTablero - 2 , estadoSalida , piezaEleguida);
             }
             res.addListaIteracion((float) iteracionesMedios / 10);
             System.out.println( "E/J -> "+ii+" sobre "+etapas +" iteraciones -> "+(float) iteracionesMedios / 10);
+            //Aqui vamos a meter los resultados
+            resultadoAux = new ResultadosRefuerzo();
+            if(piezaEleguida < 0) resultadoAux.tipoDePartida = "piezasAzar";
+            else resultadoAux.tipoDePartida = j.getNombrePieza().get( piezaEleguida );
+            resultadoAux.numeroJuegosEntrenamiento = numeroEntrenamiento;
+            resultadoAux.numeroIteraciones = (float) iteracionesMedios / 10;
+            resultadoAux.numeroPiezas = this.numeroPiezas;
+            resultadoAux.girosLs = this.girosLs;
+            resultadoAux.movimientoLs = this.movimientoLs;
+            resultadoAux.tiempos = this.tiempos;
+            resultadosRefuerzoList.add(resultadoAux);
+
+
+
             if( iteracionesMedios/10 == 50.0 ){
                 break;
             }
+
+
             // ========== eleguimos realizar 50 partidas =======================
             for(int i = 0; i < numeroJuegos ; i++){
+                numeroEntrenamiento++;
                 salidasJuegos = inicarJuego( j  , piezaEleguida);
                 estadoMensaje = salidasJuegos.mensaje();
                 estadoSiguiente = salidasJuegos.estado();
@@ -96,7 +133,7 @@ public class refuerzo {
 
                             addNuevoEventos(estadoSiguiente);
                             /*
-                             *  ya tenemos r^t que es puntuacion
+                             * ya tenemos r^t que es puntuacion
                              * tenemos s^t que es estadoAnteriorAct
                              * tenemos s^(t+1) que es estadoActual
                              * a^t es accion anterior
@@ -125,7 +162,7 @@ public class refuerzo {
                                             * (puntuacion
                                             + factorRecuerdo*(auxFloat - qsa.get(accionElegida))
                                     )
-                            );
+                           );
 
                         }
 
@@ -149,17 +186,17 @@ public class refuerzo {
             int numeroDePaso = 0;
 
             if(piezaEleguida >= 0){
-                estadoMensaje = j.iniciarDesdePieza("000000",
+                estadoMensaje = j.iniciarDesdePieza(estadoSalida,
                         j.getNombrePieza().get(piezaEleguida));
             }
             else{
-                estadoMensaje = j.iniciarDesdePieza("000000",
+                estadoMensaje = j.iniciarDesdePieza(estadoSalida,
                         j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size())));
             }
 
 
             //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
-            j.configurarLimites(true, 50, altoTablero - 3, altoTablero - 5);
+            j.configurarLimites(true, 50, altoTablero - 2, altoTablero -2);
             //Se hace al principio para arrancar
 
             //splitearAccionesCubo(textoDeEstado);
@@ -211,14 +248,14 @@ public class refuerzo {
         Estado estadoAnterior;
 
         if(piezaEleguida >= 0){
-            estadoMensaje = j.iniciarDesdePieza("000000",
+            estadoMensaje = j.iniciarDesdePieza(estadoSalida,
                     j.getNombrePieza().get(piezaEleguida));
         }else{
-            estadoMensaje = j.iniciarDesdePieza("000000",
+            estadoMensaje = j.iniciarDesdePieza(estadoSalida,
                     j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size())));
         }
-        j.configurarLimites(true, iterMax,altoTablero - 3, altoTablero - 5);
-
+        j.configurarLimites(true, iterMax,altoTablero - 2, altoTablero - 2);
+        long inicio,fin,duracion;
         while(estadoMensaje.equals("Correcto")){
             estadoAnterior = j.devolverEstadoClase();
             if(dibujar) {
@@ -228,7 +265,7 @@ public class refuerzo {
             int maximaAcciones = 0;
             float auxFloat;
             //List<Integer> lsNoVisitidos = new ArrayList<>();
-
+            inicio = System.nanoTime(); // 🔵 línea A
             for(int k = 0 ; k  < estadoAnterior.accionPosicion().size() ; k++){
                 auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f);
 
@@ -252,7 +289,13 @@ public class refuerzo {
                     estadoAnterior.accionPosicion().get( maximaAcciones ),
                     //proximaAccionGiro
                     estadoAnterior.accionGiro().get( maximaAcciones ), piezaEleguida  );
+            fin = System.nanoTime(); // 🔴
+            duracion = fin - inicio;
 
+            this.tiempos.add(duracion / 1_000_000.0);
+            this.movimientoLs.add( estadoAnterior.accionPosicion().get( maximaAcciones ) );
+            this.girosLs.add(estadoAnterior.accionGiro().get( maximaAcciones ));
+            this.numeroPiezas.add(estadoAnterior.pieza());
 
 
         }
@@ -265,16 +308,18 @@ public class refuerzo {
         String res = "";
         String estadoMensaje;
         Estado estado = null;
+
+
         if(piezaEleguida >= 0){
-            estadoMensaje = j.iniciarDesdePieza("000000",
+            estadoMensaje = j.iniciarDesdePieza(estadoSalida,
                     j.getNombrePieza().get(piezaEleguida));
         }else{
-            estadoMensaje = j.iniciarDesdePieza("000000",
+            estadoMensaje = j.iniciarDesdePieza(estadoSalida,
                     j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size())));
         }
         if(estadoMensaje.equals("Correcto")){
             //es obligatorio usar esta funcion cada vez que empieza una nueva partida para que reinicie el contador de iteraciones
-            j.configurarLimites(true, 50, altoTablero - 3, altoTablero - 5);
+            j.configurarLimites(true, 50, altoTablero - 2, altoTablero - 2);
             //Se hace al principio para arrancar
             //splitearAccionesCubo(textoDeEstado);
             estado = j.devolverEstadoClase();
