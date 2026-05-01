@@ -1,12 +1,14 @@
 package algoritmoAprendizajePorRefuerzo;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import tetrissimulador.Estado;
 import tetrissimulador.juego;
+
+import static java.util.stream.Collectors.toList;
+
 /*
  * 
  * Normalizar la de la matriz entera en toda la matriz
@@ -15,6 +17,7 @@ public class refuerzo {
     /*
      * qsa es esactamente Q(s,a)
      */
+    private HashMap<String,Integer> qsap = new HashMap<>();
     private HashMap<String,Float> qsa = new HashMap<>();    // La lista de puntos
     private float aleatorio;                                //Una variable aleatoria
     private int aletarioInt;                                //Una variable aleatoria entera
@@ -26,6 +29,7 @@ public class refuerzo {
     List<Integer> girosLs;
     List<Integer> numeroPiezas;
     List<Double> tiempos;
+    String tipoElecciones;
 
     public List<ResultadosRefuerzo> resultadosRefuerzoList;
 
@@ -44,7 +48,16 @@ public class refuerzo {
      */
     public SalidaRefuerzo entrenar(boolean reentrenar , int anchura , int altura  , int etapas , int numeroJuegos, Integer piezaEleguida,
                                    float factorAprendizaje, float factorRecuerdo,
-                                   boolean juegarAlFinal){
+                                   boolean juegarAlFinal, String tipoDeElecciones){
+        /*
+        tipoDeElecciones:
+        azar : las elecciones se realiza al azar
+        primeroZeros: Se usa primero las que son zero
+        EGreede : e-greede con contante de 20%
+        modificarCte: e-greede pero modificamos constante segun si la media 1/2 tamaño o 3*tamaño
+        porVistas: Ahora lo miramos por una media entre puntuacion y veces que se ve
+         */
+        this.tipoElecciones = tipoDeElecciones;
         anchoTablero = anchura;
         altoTablero = altura;
         for(int i = 0; i < anchoTablero;i++) estadoSalida += "0";
@@ -68,7 +81,7 @@ public class refuerzo {
         String estadoMensaje;
         parEstado salidasJuegos = null;
         resultadoMovimiento resultadoMovimiento = null;
-        Integer iteracionesMedios = 0;
+        //Integer iteracionesMedios = 0;
 
         SalidaRefuerzo res = new SalidaRefuerzo(factorAprendizaje,factorRecuerdo,numeroJuegos);
 
@@ -77,22 +90,41 @@ public class refuerzo {
         for(int ii = 0 ; ii < etapas; ii++){
             random = new Random(); //iniciamos numero aleatorio
             j = new juego(altoTablero,anchoTablero); //iniciamos juego
-            iteracionesMedios = 0;
+            float mediasIteraciones;
             movimientoLs = new ArrayList<>();
             girosLs = new ArrayList<>();
             numeroPiezas = new ArrayList<>();
             tiempos = new ArrayList<>();
-            for( int juegosTest = 0 ; juegosTest < 10 ; juegosTest++ ){
-                                iteracionesMedios += jugarUna( j , false , 50, altoTablero - 2, altoTablero - 2 , estadoSalida , piezaEleguida);
+            List<Integer> lsIteraciones = new ArrayList<>();
+            Integer iterAux;
+            //===================
+            if(piezaEleguida < 0){
+                for( int juegosTest = 0 ; juegosTest < 50 ; juegosTest++ ){
+                    iterAux = jugarUna( j , false , 50, altoTablero - 2, altoTablero - 2 , estadoSalida , piezaEleguida);
+                    lsIteraciones.add(iterAux);
+                    //iteracionesMedios += jugarUna( j , false , 50, altoTablero - 2, altoTablero - 2 , estadoSalida , piezaEleguida);
+                }
+                mediasIteraciones = (float) lsIteraciones.stream()
+                        .sorted()
+                        .skip(5)
+                        .limit(lsIteraciones.size()-10)
+                        .mapToInt(Integer::intValue)
+                        .average().orElse(0.0);
+            }else{
+                mediasIteraciones = (float)jugarUna( j , false , 50, altoTablero - 2, altoTablero - 2 , estadoSalida , piezaEleguida);
+                //lsIteraciones.add(iterAux);
             }
-            res.addListaIteracion((float) iteracionesMedios / 10);
-            System.out.println( "E/J -> "+ii+" sobre "+etapas +" iteraciones -> "+(float) iteracionesMedios / 10);
+
+
+            //=============================
+            res.addListaIteracion( mediasIteraciones);
+            System.out.println( "E/J -> "+ii+" sobre "+etapas +" iteraciones -> "+(float) mediasIteraciones);
             //Aqui vamos a meter los resultados
             resultadoAux = new ResultadosRefuerzo();
             if(piezaEleguida < 0) resultadoAux.tipoDePartida = "piezasAzar";
             else resultadoAux.tipoDePartida = j.getNombrePieza().get( piezaEleguida );
             resultadoAux.numeroJuegosEntrenamiento = numeroEntrenamiento;
-            resultadoAux.numeroIteraciones = (float) iteracionesMedios / 10;
+            resultadoAux.numeroIteraciones = mediasIteraciones;
             resultadoAux.numeroPiezas = this.numeroPiezas;
             resultadoAux.girosLs = this.girosLs;
             resultadoAux.movimientoLs = this.movimientoLs;
@@ -101,17 +133,17 @@ public class refuerzo {
 
 
 
-            if( iteracionesMedios/10 == 50.0 ){
+            if( mediasIteraciones >= 50.0 ){
                 break;
             }
-
-
+            int tiempoDePartida = 0;
             // ========== eleguimos realizar 50 partidas =======================
             for(int i = 0; i < numeroJuegos ; i++){
                 numeroEntrenamiento++;
                 salidasJuegos = inicarJuego( j  , piezaEleguida);
                 estadoMensaje = salidasJuegos.mensaje();
                 estadoSiguiente = salidasJuegos.estado();
+                tiempoDePartida = 0;
 
                 if(estadoMensaje.equals("Correcto")){
 
@@ -122,14 +154,16 @@ public class refuerzo {
                          */
                         //j.dibujar(); //aqui
 
+
                         resultadoMovimiento = siguienteEstado( j , estadoSiguiente , piezaEleguida);
                         estadoMensaje = resultadoMovimiento.mensaje();
                         accionElegida = resultadoMovimiento.movimientoElegido();
-                        estadoAnterior = resultadoMovimiento.estadoAnterior();
-                        estadoSiguiente = resultadoMovimiento.estadoActual();
+
                         if(estadoMensaje.equals("Correcto")){
+                            tiempoDePartida += 1;
+                            estadoSiguiente = resultadoMovimiento.estadoActual();
                             //Vamos a empezar a calcular el refuerzo o puntucion. Este sera segun las alturas
-                            puntuacion = calcularPuntucaion(estadoSiguiente);
+                            puntuacion = calcularPuntucaion(estadoSiguiente,tiempoDePartida); //Esto es una prueba
 
                             addNuevoEventos(estadoSiguiente);
                             /*
@@ -150,7 +184,7 @@ public class refuerzo {
                                 auxFloat = 0;
                                 for( int accionFor = 0 ; accionFor < estadoAux.accionPosicion().size() ; accionFor ++ ){
                                     act = crearEtiquetaEstado(estadoAux , accionFor);
-                                    auxFloat2 = qsa.getOrDefault(act, 0.0f);
+                                    auxFloat2 = qsa.getOrDefault(act, 0.0f); //esto es para la siguiente En plan maxa(Q[s',a])
                                     if (auxFloat2 > auxFloat) {
                                         auxFloat = auxFloat2;
                                     }
@@ -165,7 +199,19 @@ public class refuerzo {
                            );
 
                         }
+                        else {
+                            //System.out.println(estadoSiguiente);
+                            puntuacion = calcularPuntucaion(estadoSiguiente,tiempoDePartida);
+                            addNuevoEventos(estadoSiguiente);
+                            qsa.put(accionElegida,
+                                    qsa.get(accionElegida)
+                                            + factorAprendizaje
+                                            * (puntuacion-(anchoTablero*altoTablero)
+                                            + factorRecuerdo*( -( anchoTablero*altoTablero) - qsa.get(accionElegida))
+                                    )
+                            );
 
+                        }
                     }
 
                 }else{
@@ -212,7 +258,7 @@ public class refuerzo {
                 lsNoVisitidos = new ArrayList<>();
 
                 for (int k = 0; k < estadoAnterior.accionPosicion().size(); k++) {
-                    auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f);
+                    auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f); //Esto es de jugar una
 
 
                     lsNoVisitidos.add(k);
@@ -267,7 +313,7 @@ public class refuerzo {
             //List<Integer> lsNoVisitidos = new ArrayList<>();
             inicio = System.nanoTime(); // 🔵 línea A
             for(int k = 0 ; k  < estadoAnterior.accionPosicion().size() ; k++){
-                auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f);
+                auxFloat = qsa.getOrDefault(crearEtiquetaEstado(estadoAnterior, k), 0.0f); //Tambien es de jugar Una
 
 
                 //lsNoVisitidos.add(k);
@@ -333,18 +379,318 @@ public class refuerzo {
     }
 
     private resultadoMovimiento siguienteEstado( juego j, Estado estado , Integer piezaElegida){
-        int proximaAccionX , proximaAccionGiro;
-        float valorMaximoAccion = -100;
-        int maximaAcciones = 0;
-        //List<Integer> lsNoVisitidos = new ArrayList<>();
-        float auxFloat;
+
+
         Estado estadoAnterior = null;
         Estado estadoActual = null;
-        String accionElegida;
+        AccionEscogida accionElegida;
         String resultado;
+        //Eleguimos acciones ================
+        if(this.tipoElecciones.equals("primeroZeros")){
+            accionElegida = eleguirAleatorioPrimeroZeros(estado);
+        } else if (this.tipoElecciones.equals( "EGreede" )) {
+            accionElegida = eleguirEGreedyPrimeroZeros(estado);
+        } else if (this.tipoElecciones.equals("modificarCte")) {
+            accionElegida = EGreedyModificarCte(estado);
+        }else if(this.tipoElecciones.equals("porVistas")){
+            accionElegida = elegcionPorVisitas(estado);
 
+        } else{
+            accionElegida = eleguirAleatorio(estado);
+        }
+
+        String textoAccionElegida = crearEtiquetaEstado(accionElegida);
+
+        //Aqui sumamos las acciones
+        qsap.put(textoAccionElegida, qsap.get(textoAccionElegida)+1);
+
+        //Realizamos Accion ================
+        resultado = j.realizarMovimientoDevClase(accionElegida.posicion() , accionElegida.giro() , piezaElegida);
+
+        if( resultado.equals("Correcto") ){
+            estadoActual = j.devolverEstadoClase();
+        }
+
+        return new resultadoMovimiento( resultado , estadoAnterior , estadoActual , textoAccionElegida);
+
+
+    }
+    private AccionEscogida eleguirAleatorio(Estado estado){
+        int aletarioInt,proximaAccionX,proximaAccionGiro;
+        String accionEleguida;
+        aletarioInt = random.nextInt( estado.accionPosicion().size() );
+        accionEleguida = crearEtiquetaEstado(estado,aletarioInt);
+        return new AccionEscogida( estado.pieza() , estado.alturas() , estado.accionPosicion().get(aletarioInt),estado.accionGiro().get(aletarioInt) );
+
+
+    }
+    private AccionEscogida eleguirAleatorioPrimeroZeros(Estado estado){
+        int aletarioInt,accionPosicionEscogida;
+        String accionEleguida;
+        //Aqui creamos la lista a eleguir
+        List<Integer> accionesAMirar = new ArrayList<>();   //Aqui van a estar las posiciones de los estados a eleguir
+                                                            //Si al final no hay zeros esto sera una lista de 0 a estado.accionPosicion().size()
+        List<Integer> accionesAux = new ArrayList<>();      //Este va a ser una lista de todas las acciones [0, sice]
+
+        for(int i = 0 ; i < estado.accionPosicion().size() ; i++){
+            accionesAux.add(i);
+            if( qsap.get(crearEtiquetaEstado(estado,i)) == 0 ){
+                accionesAMirar.add(i);
+            }
+        }
+        if(accionesAMirar.isEmpty()){
+            accionesAMirar = accionesAux;
+        }
+
+
+
+        //El objetivo es siempre preguntar y modificar aletarioInt y accionPosicionEscogida
+        aletarioInt = random.nextInt( accionesAMirar.size() );
+        accionPosicionEscogida = accionesAMirar.get(aletarioInt);
+        //accionEleguida = crearEtiquetaEstado(estado,accionesAMirar.get(aletarioInt));
+        return new AccionEscogida( estado.pieza() , estado.alturas() ,
+                estado.accionPosicion().get(
+                        accionPosicionEscogida
+                ),
+                estado.accionGiro().get(
+                        accionPosicionEscogida
+                ) );
+
+
+    }
+
+    private AccionEscogida eleguirEGreedyPrimeroZeros(Estado estado){
+        float probabilidadExplotar = 0.2f;
+        float azarFloat;
+        int aletarioInt,accionPosicionEscogida;
+        String accionEleguida;
+        boolean hayZeros = true;
+        //Aqui creamos la lista a eleguir
+        List<Integer> accionesAMirar = new ArrayList<>();   //Aqui van a estar las posiciones de los estados a eleguir
+        //Si al final no hay zeros esto sera una lista de 0 a estado.accionPosicion().size()
+        List<Integer> accionesAux = new ArrayList<>();      //Este va a ser una lista de todas las acciones [0, sice]
+
+        for(int i = 0 ; i < estado.accionPosicion().size() ; i++){
+            accionesAux.add(i);
+            if( qsap.get(crearEtiquetaEstado(estado,i)) == 0 ){
+                accionesAMirar.add(i);
+            }
+        }
+        if(accionesAMirar.isEmpty()){
+            accionesAMirar = accionesAux;
+            hayZeros = false;
+        }
+        //accionesAMirar = accionesAux;
+
+
+        //El objetivo es siempre preguntar y modificar aletarioInt y accionPosicionEscogida
+        if(hayZeros){
+            aletarioInt = random.nextInt( accionesAMirar.size() );
+            accionPosicionEscogida = accionesAMirar.get(aletarioInt);
+        }else{
+            azarFloat = random.nextFloat();
+            if(azarFloat <= probabilidadExplotar){ //El mejor
+                accionPosicionEscogida = accionesAMirar.stream()
+                        .max( Comparator.comparing(c ->
+                                qsa.get(
+                                        crearEtiquetaEstado(estado , c)
+                                )
+                        )  ).orElse(0);
+            }else {
+                aletarioInt = random.nextInt( accionesAMirar.size() );
+                accionPosicionEscogida = accionesAMirar.get(aletarioInt);
+            }
+        }
+
+
+
+        //accionEleguida = crearEtiquetaEstado(estado,accionesAMirar.get(aletarioInt));
+        return new AccionEscogida( estado.pieza() , estado.alturas() ,
+                estado.accionPosicion().get(
+                        accionPosicionEscogida
+                ),
+                estado.accionGiro().get(
+                        accionPosicionEscogida
+                ) );
+
+
+    }
+
+    private AccionEscogida EGreedyModificarCte(Estado estado){
+        float probabilidadExplotar = 0.2f;
+        float azarFloat;
+        int aletarioInt,accionPosicionEscogida;
+        String accionEleguida;
+        boolean hayZeros = true;
+        //=================================================//=================================================//
+        //Aqui creamos la lista a eleguir
+        List<Integer> accionesAMirar = new ArrayList<>();   //Aqui van a estar las posiciones de los estados a eleguir
+        //Si al final no hay zeros esto sera una lista de 0 a estado.accionPosicion().size()
+        List<Integer> accionesAux = new ArrayList<>();      //Este va a ser una lista de todas las acciones [0, sice]
+
+        for(int i = 0 ; i < estado.accionPosicion().size() ; i++){
+            accionesAux.add(i);
+            if( qsap.get(crearEtiquetaEstado(estado,i)) == 0 ){
+                accionesAMirar.add(i);
+            }
+        }
+        if(accionesAMirar.isEmpty()){
+            accionesAMirar = accionesAux;
+            hayZeros = false;
+        }
+
+        //El objetivo es siempre preguntar y modificar aletarioInt y accionPosicionEscogida
+        if(hayZeros){
+            aletarioInt = random.nextInt( accionesAMirar.size() );
+            accionPosicionEscogida = accionesAMirar.get(aletarioInt);
+        }else{
+            //=================================================//=================================================//
+            //Aqui modificamos la constante
+            int numeroAcciones = estado.accionPosicion().size();
+            double mediaVistas = accionesAMirar.stream()
+                    .mapToInt( c -> qsap.get(crearEtiquetaEstado(estado,c)) )
+                    .average().orElse(0);
+            if(mediaVistas < (double)(numeroAcciones/2) ){
+                probabilidadExplotar = 0.1f;
+            } else if (mediaVistas > (double) numeroAcciones*3) {
+                probabilidadExplotar = 0.9f;
+            }else{
+                probabilidadExplotar = (float) (0.32/numeroAcciones) -0.06f;
+            }
+
+
+            azarFloat = random.nextFloat();
+            if(azarFloat <= probabilidadExplotar){ //El mejor
+                accionPosicionEscogida = accionesAMirar.stream()
+                        .max( Comparator.comparing(c ->
+                                qsa.get(
+                                        crearEtiquetaEstado(estado , c)
+                                )
+                        )  ).orElse(0);
+            }else {
+                aletarioInt = random.nextInt( accionesAMirar.size() );
+                accionPosicionEscogida = accionesAMirar.get(aletarioInt);
+            }
+        }
+
+
+
+        //accionEleguida = crearEtiquetaEstado(estado,accionesAMirar.get(aletarioInt));
+        return new AccionEscogida( estado.pieza() , estado.alturas() ,
+                estado.accionPosicion().get(
+                        accionPosicionEscogida
+                ),
+                estado.accionGiro().get(
+                        accionPosicionEscogida
+                ) );
+
+
+    }
+
+    private AccionEscogida elegcionPorVisitas(Estado estado){
+        int aletarioInt,accionPosicionEscogida;
+        accionPosicionEscogida = 0;
+        String accionEleguida;
+        boolean hayZeros = true;
+        //=================================================//=================================================//
+        //Aqui creamos la lista a eleguir
+        List<Integer> accionesAMirar = new ArrayList<>();   //Aqui van a estar las posiciones de los estados a eleguir
+        //Si al final no hay zeros esto sera una lista de 0 a estado.accionPosicion().size()
+        List<Integer> accionesAux = new ArrayList<>();      //Este va a ser una lista de todas las acciones [0, sice]
+
+        for(int i = 0 ; i < estado.accionPosicion().size() ; i++){
+            accionesAux.add(i);
+            if( qsap.get(crearEtiquetaEstado(estado,i)) == 0 ){
+                accionesAMirar.add(i);
+            }
+        }
+        if(accionesAMirar.isEmpty()){
+            accionesAMirar = accionesAux;
+            hayZeros = false;
+        }
+
+        //El objetivo es siempre preguntar y modificar aletarioInt y accionPosicionEscogida
+        if(hayZeros){
+            aletarioInt = random.nextInt( accionesAMirar.size() );
+            accionPosicionEscogida = accionesAMirar.get(aletarioInt);
+        }else{
+
+            // accionesAMirar Aqui estan todas las acciones
+            //Vamos a escoger una en accionPosicionEscogida
+            Float puntuacionInferior = (float)accionesAMirar.stream()
+                    .mapToDouble(c -> qsa.get(crearEtiquetaEstado(estado,c)))
+                    .min().orElse(0.0f);
+
+            List<Float> puntuacionLs = accionesAMirar.stream()
+                    .map( c -> qsa.get( crearEtiquetaEstado(estado,c) )+puntuacionInferior)
+                    .toList();
+
+            Float total = (float) puntuacionLs.stream().mapToDouble(c -> c)
+                    .sum();
+            puntuacionLs = puntuacionLs.stream()
+                    .map( c -> c/ total)
+                    .toList();
+
+            Integer vistas = accionesAMirar.stream()
+                    .mapToInt(c -> qsap.get( crearEtiquetaEstado(estado,c) ))
+                    .sum();
+            float mediaVistas = (float) vistas /puntuacionLs.size();
+            Integer numeroAcciones = puntuacionLs.size();
+            List<Float> vistaMirar = accionesAMirar.stream()
+                    .map(c ->(
+                            (1 - (qsap.get( crearEtiquetaEstado(estado,c) ) /(float)vistas) )
+                    ) )
+                    .toList();
+            float vistaTotal = (float) vistaMirar.stream().mapToDouble(c->c).sum();
+            vistaMirar = vistaMirar.stream().map(c -> c/vistaTotal).toList();
+
+            Float finalTotal = (float)vistaMirar.stream().mapToDouble(c -> c).sum();
+
+            vistaMirar = vistaMirar.stream()
+                    .map(c -> c/finalTotal)
+                    .toList();
+
+
+            float azarFloat = random.nextFloat()*2;
+            float acumulador = 0.0f;
+            float pesoPuntuacion;
+            float pesoVistas;
+            if(mediaVistas < (double)(numeroAcciones/2) ){
+                pesoPuntuacion = 0.1f;
+            } else if (mediaVistas > (double) numeroAcciones*3) {
+                pesoPuntuacion = 0.9f;
+            }else{
+                pesoPuntuacion = (float) (0.32/numeroAcciones) -0.06f;
+            }
+            pesoVistas = 1 - pesoPuntuacion;
+
+            for( int posi = 0 ; posi <  accionesAMirar.size() ; posi++){
+                //Aqui es donde se realiza la suma ponderada
+                acumulador += puntuacionLs.get(posi)*pesoPuntuacion+vistaMirar.get(posi)*pesoVistas;
+                if(azarFloat < acumulador){
+                    accionPosicionEscogida = accionesAMirar.get(posi);
+                    break;
+                }
+
+            }
+
+
+
+        }
+        return new AccionEscogida( estado.pieza() , estado.alturas() ,
+                estado.accionPosicion().get(
+                        accionPosicionEscogida
+                ),
+                estado.accionGiro().get(
+                        accionPosicionEscogida
+                ) );
+    }
+
+    // Coreguir y pedir variables
+    //==========
+        /*
         for( int k = 0 ; k < estado.accionPosicion().size();k++ ){
-            auxFloat = qsa.get( crearEtiquetaEstado( estado , k ) );
+            auxFloat = qsa.get( crearEtiquetaEstado( estado , k ) ); //Esta es la de eleguir accion
 
             if (valorMaximoAccion < auxFloat) {
                 valorMaximoAccion = auxFloat;
@@ -354,7 +700,7 @@ public class refuerzo {
 
         //======
         auxFloat = 2.0f; //(float) ( - ( numeroAccionesPuntuadas/acciones.size() - 1)*0.9 + 0.1);
-
+        //Ahora mismo esta en full aleatorio
         aletarioInt = random.nextInt( estado.accionPosicion().size() );
         aleatorio = random.nextFloat();
 
@@ -364,35 +710,22 @@ public class refuerzo {
             proximaAccionX = estado.accionPosicion().get(aletarioInt);
             proximaAccionGiro = estado.accionGiro().get(aletarioInt);
 
-
+            qsap.put( crearEtiquetaEstado(estado,aletarioInt) ,  qsap.get(crearEtiquetaEstado(estado,aletarioInt))+1); //encrementamos 1
             //System.out.println("Exploracion");
         }else{
             proximaAccionX = estado.accionPosicion().get(maximaAcciones);
             proximaAccionGiro = estado.accionGiro().get(maximaAcciones);
+            qsap.put( crearEtiquetaEstado(estado,maximaAcciones) ,  qsap.get(crearEtiquetaEstado(estado,maximaAcciones))+1); //incrementamos 1
             //System.out.println("avance");
         }
 
+        //Sumamos para la accion eleguida
         estadoAnterior = estado;
         accionElegida = estadoAnterior.pieza()+"/"+ //este si se queda porque depende de proximo
                 estadoAnterior.alturas()+"A"+
                 proximaAccionX+"-"+proximaAccionGiro;
-
-
-        /*
-         * Aqui realizamos el moviemiento
-         */
-        //System.out.println( estado.accionPosicion() );
-        //System.out.println( estado.accionGiro());
-        resultado = j.realizarMovimientoDevClase(proximaAccionX, proximaAccionGiro , piezaElegida);
-
-        if( resultado.equals("Correcto") ){
-            estadoActual = j.devolverEstadoClase();
-        }
-
-        return new resultadoMovimiento( resultado , estadoAnterior , estadoActual , accionElegida);
-
-
-    }
+        */
+    //=========
 
     private List<String> addNuevoEventos(Estado entrada){
         /*
@@ -406,13 +739,20 @@ public class refuerzo {
             ){
                 qsa.put( crearEtiquetaEstado(entrada,i) ,
                         0.0f);
+                qsap.put( crearEtiquetaEstado(entrada,i) ,
+                        0);
             }
         }
         return res;
     }
 
+
+
     private String crearEtiquetaEstado(Estado estado , int n){
         return  estado.pieza()+"/"+estado.alturas()+"A"+estado.accionPosicion().get(n)+"-"+estado.accionGiro().get(n);
+    }
+    private String crearEtiquetaEstado(AccionEscogida accion){
+        return  accion.pieza()+"/"+accion.alturas()+"A"+accion.posicion()+"-"+accion.giro();
     }
 
     private float calcularPuntucaion( Estado estadoSiguiente ){
@@ -431,7 +771,17 @@ public class refuerzo {
         //Ahora hay que realizar una cosa muy bonita
         // Si se genera un hueco nuevo se le castiga con ( - numero de huecos )
         // Si se borra una linea se le premia con        ( + el numero de fila quitadas )
-        puntuacion += estadoSiguiente.filasQuitadas() - estadoSiguiente.huecosNuevos()*estadoSiguiente.alturas().size();
+        puntuacion += estadoSiguiente.filasQuitadas() - (float)(estadoSiguiente.huecosNuevos()*anchoTablero/2);
+
+        return puntuacion;
+    }
+    private float calcularPuntucaion( Estado estadoSiguiente , Integer tiempoDePartida){
+        float puntuacion = tiempoDePartida;
+
+        //Ahora hay que realizar una cosa muy bonita
+        // Si se genera un hueco nuevo se le castiga con ( - numero de huecos )
+        // Si se borra una linea se le premia con        ( + el numero de fila quitadas )
+        puntuacion += estadoSiguiente.filasQuitadas();
 
         return puntuacion;
     }
@@ -446,7 +796,7 @@ public class refuerzo {
                 for( String j : qsa.keySet() ){
                     piezaSet = j.split("/");
                     if( Integer.parseInt(piezaSet[0]) == i ){
-                        bw.write( j+"="+qsa.get(j) );
+                        bw.write( j+"="+qsa.get(j)+"="+qsap.get(j) );
                         bw.newLine();
                     }
                 }
@@ -472,6 +822,7 @@ public class refuerzo {
                     while ( (linea = reader.readLine()) != null ){
                         separacion = linea.split("=");
                         qsa.put( separacion[0] , Float.parseFloat(separacion[1]) );
+                        qsap.put( separacion[0] , Integer.parseInt(separacion[2]) );
                         //System.out.println(linea);
                     }
                 }catch (IOException e){
@@ -487,6 +838,6 @@ public class refuerzo {
 
     private record resultadoMovimiento(String mensaje , Estado estadoAnterior , Estado estadoActual, String movimientoElegido){}
 
+    private record AccionEscogida(Integer pieza , List<Integer> alturas, Integer posicion, Integer giro ){}
+
 }
-
-

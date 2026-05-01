@@ -17,34 +17,45 @@ import java.util.Random;
 public class pruebas {
     public static void main(String[] args) {
         // la mejor es 0,85|0,4666667
-        refuerzo i = new refuerzo();
+
         SalidaRefuerzo res;
         int apreMax = 20;
         int recuerMax = 3;
-        Integer piezaElegida = 6;
         Integer altura = 10;
         Integer anchura = 6;
         List<SalidaRefuerzo> listaRes = new ArrayList<>();
+        List<String> tipoDeDecision = new ArrayList<>( List.of(
+                "azar",
+                "primeroZeros",
+                "EGreede",
+                "modificarCte",
+                "porVistas") );
+//int k = 0 ; k < tipoDeDecision.size();k++
+        for(int piezaElegida = 0; piezaElegida < 7 ; piezaElegida++){
+            System.out.println("======================= Pieza"+piezaElegida +" ======================= ");
+            refuerzo i = new refuerzo();
+            res = i.entrenar( true  , anchura , altura , 50,
+                    4000 , piezaElegida,
+                    0.85f , 0.4666667f,
+                    true , tipoDeDecision.get(3));
 
-        res = i.entrenar( true  , anchura , altura , 50,
-                5000 , piezaElegida,
-                0.85f , 0.4666667f,
-                true);
+            String tipo = "Refuerzo"+altura+"_"+anchura+"_"+piezaElegida;
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(
+                    "tetrisJava/salidaTestFactores/"+tipo+".txt"
+            ))) {
+                writer.write( i.resultadosRefuerzoList.getFirst().titulo() );
+                for(ResultadosRefuerzo j : i.resultadosRefuerzoList){
+                    writer.newLine();
+                    writer.write(j.fila());
+                }
 
-        String tipo = "Refuerzo"+altura+"_"+anchura+"_"+piezaElegida;
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(
-                "tetrisJava/salidaTestFactores/"+tipo+".txt"
-        ))) {
-            writer.write( i.resultadosRefuerzoList.getFirst().titulo() );
-            for(ResultadosRefuerzo j : i.resultadosRefuerzoList){
-                writer.newLine();
-                writer.write(j.fila());
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+
+
         /*for(int apren = 1 ; apren < apreMax ; apren++){
             for(int recurd = 1; recurd < recuerMax ; recurd++){
                 float aprender = (float)apren/ apreMax;
