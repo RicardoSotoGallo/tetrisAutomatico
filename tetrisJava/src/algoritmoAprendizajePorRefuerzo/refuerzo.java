@@ -308,7 +308,7 @@ public class refuerzo {
         usando -> AccionEscogida
         private String crearEtiquetaEstado(AccionEscogida accion)
          */
-        float maximo = Float.MIN_VALUE;
+        float maximo = -Float.MAX_VALUE;
         int posiMaximo = 0;
         for(int i = 0; i < estado.accionPosicion().size(); i++){
             if(qsa.containsKey(crearEtiquetaEstado( estado,i ))){

@@ -36,10 +36,10 @@ public class pruebas {
         int k= 3;
             System.out.println("======================= Pieza"+tipoDeDecision.get(k) +" ======================= ");
             refuerzo i = new refuerzo();
-            /*res = i.entrenar( true  , anchura , altura , 150,
+            res = i.entrenar( false  , anchura , altura , 1,
                     5000 , -1,
                     0.85f , 0.4666667f,
-                    true , tipoDeDecision.get(k));*/
+                    true , tipoDeDecision.get(k));
             //RefuerzoDecision_modificarCte_10_6_5.txt
             String tipo = "RefuerzoDecision_"+tipoDeDecision.get(k)+"_"+altura+"_"+anchura+"_"+-1;
             //Lista de tipos de puntuacion
