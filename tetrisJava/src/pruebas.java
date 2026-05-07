@@ -25,21 +25,35 @@ public class pruebas {
         Integer anchura = 6;
         List<SalidaRefuerzo> listaRes = new ArrayList<>();
         List<String> tipoDeDecision = new ArrayList<>( List.of(
-                "azar",
-                "primeroZeros",
-                "EGreede",
-                "modificarCte",
-                "porVistas") );
+                "Azar",
+                "PrimeroCeros",
+                "EGreedy",
+                "ModificarCte",
+                "PorVistas") );
 //int k = 0 ; k < tipoDeDecision.size();k++
-        for(int piezaElegida = 0; piezaElegida < 7 ; piezaElegida++){
-            System.out.println("======================= Pieza"+piezaElegida +" ======================= ");
+        //int piezaElegida = 0; piezaElegida < 7 ; piezaElegida++
+        //for(int k = 0 ; k < tipoDeDecision.size();k++){
+        int k= 3;
+            System.out.println("======================= Pieza"+tipoDeDecision.get(k) +" ======================= ");
             refuerzo i = new refuerzo();
-            res = i.entrenar( true  , anchura , altura , 50,
-                    4000 , piezaElegida,
+            /*res = i.entrenar( true  , anchura , altura , 150,
+                    5000 , -1,
                     0.85f , 0.4666667f,
-                    true , tipoDeDecision.get(3));
+                    true , tipoDeDecision.get(k));*/
+            //RefuerzoDecision_modificarCte_10_6_5.txt
+            String tipo = "RefuerzoDecision_"+tipoDeDecision.get(k)+"_"+altura+"_"+anchura+"_"+-1;
+            //Lista de tipos de puntuacion
+            /*
+            SoloPasos
+            SoloHuecos
+            HuecosPremiosYCastigos
+            "SinContarElUltimoPaso";
+             */
 
-            String tipo = "Refuerzo"+altura+"_"+anchura+"_"+piezaElegida;
+
+
+
+                    //"RefuerzoDecision_"+tipoDeDecision.get(k)+"_"+altura+"_"+anchura+"_"+-1;
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(
                     "tetrisJava/salidaTestFactores/"+tipo+".txt"
             ))) {
@@ -53,7 +67,7 @@ public class pruebas {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+
 
 
         /*for(int apren = 1 ; apren < apreMax ; apren++){

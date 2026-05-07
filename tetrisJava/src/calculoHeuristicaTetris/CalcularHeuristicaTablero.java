@@ -62,7 +62,7 @@ public class CalcularHeuristicaTablero {
         while (resultado.equals("Correcto") ){
             if(visualizacion) game.dibujar();
             /*Este es el proceso*/
-            inicio = System.nanoTime(); // 🔵 línea A
+            inicio = System.nanoTime(); // 🔵 Inicio Cronometro
 
             estado = game.devolverEstado2Clase();
 
@@ -70,7 +70,7 @@ public class CalcularHeuristicaTablero {
 
             mejorAccionVariable = mejorAccion(estado , posiblesHuecos , puntuacionCasilla);
 
-            fin = System.nanoTime(); // 🔴 línea B
+            fin = System.nanoTime(); // 🔴 Fin cronometo
             duracion = fin - inicio;
             //System.out.println("Tiempo en nanosegundos: " + duracion);
             //System.out.println("Tiempo en milisegundos: " + duracion / 1_000_000.0);

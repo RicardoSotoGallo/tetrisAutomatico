@@ -2,19 +2,132 @@ import DeteccionColor.ArbolColores;
 import LectorCapturas.LectorCaputuraMedicion;
 import LectorCapturas.pareja;
 import LectorCapturas.posiciones;
+import algoritmoAprendizajePorRefuerzo.refuerzo;
+import tetrissimulador.Estado;
+import tetrissimulador.juego;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 public class pruebasImagenes {
     public static void main(String[] args){
-        juegos();
+        //juegos();
         //cosa();
+        System.out.println("Hola");
+        pruebasCon20X10();
+    }
 
+    public static void pruebasCon20X10(){
+        Integer iteracionesMaximas = 50;
+        Integer alturaMaxima = 18;
+        Integer alturaMedia = 18;
+        Random random = new Random();
+        refuerzo refuerzo = new refuerzo();
+        refuerzo.iniciarSoloEjecutar();
+        Estado estado;
+        refuerzo.MejorAccion a,b,c,res = null;
+        int numeroAcciones = 0;
+        //========
+        juego j = new juego(20,10);
+        j.configurarLimites(true , iteracionesMaximas , alturaMaxima, alturaMedia);
+        String pieza =j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size())); //j.getNombrePieza().get(random.nextInt(j.getNombrePieza().size()));
+                    //j.getNombrePieza().get(0);
+        String textoEstado = j.iniciarDesdePieza("0000000000",pieza);
+        j.dibujar();
+
+        while (textoEstado.equals("Correcto")){
+            estado = j.devolverEstadoClase();
+            estadoIncremento estado06 = devolverCorte(estado,0,6,false);
+            a = refuerzo.obtenerMejorAccion(estado06.estado());
+            estadoIncremento estado28 = devolverCorte(estado,2,8,false);
+            b = refuerzo.obtenerMejorAccion(estado28.estado());
+            estadoIncremento estado410 = devolverCorte(estado,4,10,true);
+            c = refuerzo.obtenerMejorAccion(estado410.estado());
+
+            res = new refuerzo.MejorAccion(a.posicion() + estado06.incremento , a.giro(), a.puntuacion());
+            if(a.puntuacion() < b.puntuacion()){
+                res = new refuerzo.MejorAccion( b.posicion()+estado28.incremento , b.giro(), b.puntuacion() );
+            }
+            if(b.puntuacion() < c.puntuacion()){
+                res = new refuerzo.MejorAccion(c.posicion() + estado410.incremento , c.giro(), c.puntuacion());
+            }
+            textoEstado = j.realizarMovimientoDevClase(res.posicion(), res.giro(), -1);
+
+            j.dibujar();
+            numeroAcciones += 1;
+        }
+        System.out.println(textoEstado);
+        System.out.println("Numero de acciones -> "+numeroAcciones);
+
+        /*System.out.println(estado.accionPosicion());
+        System.out.println(estado.accionGiro());
+        //=========================
+        estadoIncremento estado06 = devolverCorte(estado,0,6,false);
+        System.out.println(estado06.incremento+"\n"+estado06.estado+"\n"+"puntuacion ->"+refuerzo.obtenerMejorAccion(estado06.estado())+"\n======================");
+        //=========================
+        estadoIncremento estado28 = devolverCorte(estado,2,8,false);
+        System.out.println(estado28.incremento+"\n"+estado28.estado+"\n"+"puntuacion ->"+refuerzo.obtenerMejorAccion(estado28.estado())+"\n======================");
+        //=========================
+        estadoIncremento estado410 = devolverCorte(estado,4,10,true);
+        System.out.println(estado410.incremento+"\n"+estado410.estado+"\n"+"puntuacion ->"+refuerzo.obtenerMejorAccion(estado410.estado())+"\n======================");
+*/
+        /*
+            Conseguido
+            Ahora el plan es devolver mejor estado con su puntuacion con cada estado
+            La puntuacion se guarda aqui
+
+            Luego seria realizar accion y repetir en bucle
+            j.realizarMovimientoDevClase(  posicion + incremento, Integer giro, int siguientePieza );
+         */
+
+    }
+
+    public static estadoIncremento devolverCorte(Estado estadoBase , Integer inicioColumna , Integer finalColumna , boolean esFinal){
+        /*
+        finalColumna es la la primera fila que no se escoge. Recuerdalo
+         */
+        Integer incremento = inicioColumna;
+
+        Integer pieza = estadoBase.pieza();
+        Integer giro = estadoBase.giro();
+        List<Integer> accionPosicion = new ArrayList<>();
+        List<Integer> accionGiro = new ArrayList<>();
+        // Primero cogemos los elemoentos ================
+        List<Integer> alturas = new ArrayList<>(estadoBase.alturas().subList(inicioColumna , finalColumna));
+        Integer minimo = alturas.stream().min(Comparator.naturalOrder()).orElse(0);
+        alturas = alturas.stream().map(s -> s - minimo).toList();
+        //Ahora cogemos los movimientos =================
+        for(int i = 0 ; i < estadoBase.accionPosicion().size();i++){
+            if(inicioColumna == 0){
+                if(estadoBase.accionPosicion().get(i) < finalColumna){
+                    accionPosicion.add(estadoBase.accionPosicion().get(i));
+                    accionGiro.add(estadoBase.accionGiro().get(i));
+                }
+            } else if (esFinal) {
+                if(estadoBase.accionPosicion().get(i) >= inicioColumna){
+                    accionPosicion.add(estadoBase.accionPosicion().get(i) - incremento);
+                    accionGiro.add(estadoBase.accionGiro().get(i));
+                }
+            }else{
+                if(
+                        estadoBase.accionPosicion().get(i) >= inicioColumna &&
+                        estadoBase.accionPosicion().get(i) < finalColumna
+                ){
+                    accionPosicion.add(estadoBase.accionPosicion().get(i) - incremento);
+                    accionGiro.add(estadoBase.accionGiro().get(i));
+                }
+            }
+
+
+        }
+        return new estadoIncremento(
+                new Estado(alturas,pieza,giro,accionPosicion,accionGiro,0,0,0),
+                incremento
+        );
 
     }
 
@@ -209,4 +322,8 @@ public class pruebasImagenes {
         System.out.println(res);
 
     }
+
+    public record estadoIncremento(Estado estado , Integer incremento){}
 }
+
+
